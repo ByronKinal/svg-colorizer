@@ -149,65 +149,20 @@ function multiplyMatrices(A, B) {
   ];
 }
 
-// 7. Room text to palette color mapping
-function getColorForText(text) {
-  const t = text.toLowerCase().trim();
-  
-  // Azul - baños
-  if (t.match(/^b\s*\d+$/) || t === 's.s.' || t === 'ss' || t === 's.s' || t.includes('baño') || t.includes('sanitario')) {
-    return '#1E90FF'; // DodgerBlue
-  }
-  
-  // Rojo - conexión a otro nivel (stairs, ramps)
-  if (t === 's' || t === 'b' || t.includes('rampa') || t.includes('gradas') || t.includes('escalera') || t.includes('elevador') || t.includes('ascensor') || t.includes('conexion') || t.includes('conexión')) {
-    return '#FF4500'; // OrangeRed
-  }
-  
-  // Verde claro - césped/jardines
-  if (t.includes('césped') || t.includes('cesped') || t.includes('jardín') || t.includes('jardin') || t.includes('verde') || t.includes('grama') || t.includes('jardines') || t.includes('cancha')) {
-    return '#90EE90'; // LightGreen
-  }
-  
-  // Verde oscuro - plantas
-  if (t.includes('planta') || t.includes('macetero') || t.includes('macetera') || t.includes('plantas')) {
-    return '#228B22'; // ForestGreen
-  }
-  
-  // Gris - suelo de concreto
-  if (t.includes('concreto') || t.includes('pasillo') || t.includes('corredor') || t.includes('vestibulo') || t.includes('lobby') || t.includes('ingreso') || t.includes('parqueo') || t.includes('plaza') || t.includes('patio')) {
-    return '#D3D3D3'; // LightGrey
-  }
-  
-  // Piel - suelo del colegio
-  if (t.includes('suelo') || t.includes('colegio') || t.includes('cancha') || t.includes('patio principal')) {
-    return '#FFDAB9'; // PeachPuff
-  }
-  
-  // Naranja - salones
-  const classroomKeywords = ['aula', 'sala', 'tics', 'reuniones', 'preceptoria', 'oficina', 'secretaria', 'direccion', 'coordinacion', 'orientacion', 'profesores', 'contabilidad', 'auditorio', 'fablab', 'taller', 'enfermeria', 'básicos', 'diversificado'];
-  const isCode = /^[a-z](-\d+|\d+)$/i.test(t);
-  if (isCode || classroomKeywords.some(kw => t.includes(kw))) {
-    return '#FFA500'; // Orange
-  }
-  
-  return '#FFE4C4'; // Fallback Bisque
-}
-
-// 8. Rebuilding sequential SVG parser with clipPath safety & white-fills colorization
+// 8. Rebuilding sequential SVG parser: Cleans layout margins/labels, fixes stroke widths, and injects cancha background
 function processSVG(filepath, outpath) {
   console.log(`Processing SVG: ${path.basename(filepath)}`);
   let content = fs.readFileSync(filepath, 'utf8');
 
   // Inject synthetic grass field path for Nivel 1 at the root level right after </defs>
+  // Changed top coordinate from Y=1353 to Y=13500 to align perfectly with cancha bounds!
   if (filepath.includes('NIVEL-1-KINAL')) {
-    content = content.replace('</defs>', '</defs><path id="cancha-grass-field" transform="matrix(0.04, 0, 0, 0.04, 0, 0)" d="M 3278,1353 H 24500 V 27000 H 13100 L 3278,29500 Z" style="fill:#90EE90;stroke:none;" />');
+    content = content.replace('</defs>', '</defs><path id="cancha-grass-field" transform="matrix(0.04, 0, 0, 0.04, 0, 0)" d="M 3278,13500 H 24500 V 27000 H 13100 L 3278,29500 Z" style="fill:#ffffff;stroke:#000000;stroke-width:24;" />');
   }
 
   const tagRegex = /(<g[^>]*>|<\/g>|<text[^>]*>[\s\S]*?<\/text>|<path[^>]*>|<clipPath[^>]*>|<\/clipPath>)/gi;
   
-  // --- PASS 1: Collect room texts and their absolute coordinates ---
   const transformStack = [[1, 0, 0, 1, 0, 0]];
-  const roomTexts = [];
   
   const layoutKeywords = [
     'PLANTA', 'ESCALA', 'CONSTRUYE', 'PROPIETARIO', 'EJECUTOR', 'CONTENIDO', 
@@ -217,95 +172,10 @@ function processSVG(filepath, outpath) {
     'NIVEL', 'PRIMER', 'SEGUNDO', 'TERCER', 'CUARTO'
   ];
 
-  // Manually add Canva Grass Field mock label in Pass 1 for Nivel 1
-  if (filepath.includes('NIVEL-1-KINAL')) {
-    roomTexts.push({
-      id: 'cancha-grass-field-label',
-      text: 'cancha',
-      pos: { x: 500, y: 600 }
-    });
-  }
-
-  let match;
-  let inClipPath = false;
-  tagRegex.lastIndex = 0;
-  while ((match = tagRegex.exec(content)) !== null) {
-    const tag = match[0];
-    
-    if (tag.startsWith('<clipPath') || tag.startsWith('<clipPath')) {
-      inClipPath = true;
-      continue;
-    } else if (tag.startsWith('</clipPath') || tag.startsWith('</clipPath')) {
-      inClipPath = false;
-      continue;
-    }
-    
-    if (inClipPath) continue;
-    
-    if (tag.startsWith('<g') || tag.startsWith('<G')) {
-      const transformMatch = tag.match(/\btransform="([^"]+)"/i);
-      const parentM = transformStack[transformStack.length - 1];
-      if (transformMatch) {
-        const localM = parseMatrix(transformMatch[1]);
-        const combinedM = multiplyMatrices(parentM, localM);
-        transformStack.push(combinedM);
-      } else {
-        transformStack.push(parentM);
-      }
-    } else if (tag === '</g>' || tag === '</G>') {
-      if (transformStack.length > 1) {
-        transformStack.pop();
-      }
-    } else if (tag.startsWith('<text') || tag.startsWith('<TEXT')) {
-      const textInnerMatch = tag.match(/<text[^>]*>([\s\S]*?)<\/text>/i);
-      if (!textInnerMatch) continue;
-      const textInner = textInnerMatch[1];
-      const tspanMatch = textInner.match(/<tspan[^>]*>([\s\S]*?)<\/tspan>/i);
-      let textVal = tspanMatch ? tspanMatch[1] : textInner;
-      textVal = textVal.replace(/<[^>]*>/g, '').trim();
-      
-      if (textVal) {
-        const idMatch = tag.match(/\bid="([^"]+)"/i);
-        const transformMatch = tag.match(/\btransform="([^"]+)"/i);
-        
-        const localM = parseMatrix(transformMatch ? transformMatch[1] : null);
-        const parentM = transformStack[transformStack.length - 1];
-        const absM = multiplyMatrices(parentM, localM);
-        
-        let x = 0, y = 0;
-        const xMatch = tag.match(/\bx="([^"]+)"/i);
-        const yMatch = tag.match(/\by="([^"]+)"/i);
-        if (xMatch) x = parseFloat(xMatch[1]);
-        if (yMatch) y = parseFloat(yMatch[1]);
-        
-        const pt = transformPoint({ x, y }, absM);
-        
-        const isLayout = layoutKeywords.some(kw => textVal.toUpperCase().includes(kw)) ||
-                        pt.x >= 2850 ||
-                        (pt.x >= 2800 && (textVal.length <= 2 || /^[A-Z]$/.test(textVal)));
-                        
-        if (!isLayout) {
-          roomTexts.push({
-            id: idMatch ? idMatch[1] : 'unknown',
-            text: textVal,
-            pos: pt
-          });
-        }
-      }
-    }
-  }
-
-  console.log(`Collected ${roomTexts.length} room label texts.`);
-  
-  // --- PASS 2: Reconstruct SVG, colorize geometries and hide layout elements ---
   let output = '';
   let lastIndex = 0;
-  transformStack.length = 1;
-  transformStack[0] = [1, 0, 0, 1, 0, 0];
-  
-  let coloredCount = 0;
-  let fallbackCount = 0;
-  inClipPath = false;
+  let inClipPath = false;
+  let fixedStrokesCount = 0;
 
   tagRegex.lastIndex = 0;
   while ((match = tagRegex.exec(content)) !== null) {
@@ -445,55 +315,12 @@ function processSVG(filepath, outpath) {
                 attrs['style'] = 'display:none;';
               }
               modifiedTag = rebuildOpeningTag('path', attrs, isSelfClosing);
-            } else {
-              const style = attrs['style'] || '';
-              const fillAttr = attrs['fill'] || '';
-              
-              const isWhiteFill = fillAttr.toLowerCase() === '#ffffff' || 
-                                  fillAttr.toLowerCase() === '#fff' || 
-                                  fillAttr.toLowerCase() === 'white' ||
-                                  style.toLowerCase().includes('fill:#ffffff') ||
-                                  style.toLowerCase().includes('fill:#fff') ||
-                                  style.toLowerCase().includes('fill:white') ||
-                                  (!style.includes('fill:') && !attrs['fill']);
-                                  
-              const isNoFillOutline = style.toLowerCase().includes('fill:none') && 
-                                      style.toLowerCase().includes('stroke:#000000') &&
-                                      area > 200 && width > 5 && height > 5;
-                                      
-              if ((isWhiteFill || isNoFillOutline) && center.x < 2850 && width > 2 && height > 2) {
-                // Reverted to robust 200 units matching limit to prevent color bleeding in Nivel 1
-                let closestText = null;
-                let minDist = Infinity;
-                
-                roomTexts.forEach(rt => {
-                  const dist = Math.hypot(center.x - rt.pos.x, center.y - rt.pos.y);
-                  if (dist < minDist) {
-                    minDist = dist;
-                    closestText = rt;
-                  }
-                });
-                
-                if (closestText && minDist < 200) {
-                  const color = getColorForText(closestText.text);
-                  
-                  let newStyle = '';
-                  if (attrs['style']) {
-                    const style = attrs['style'];
-                    if (style.includes('fill:')) {
-                      newStyle = style.replace(/fill:\s*[^;]+/, `fill:${color}`);
-                    } else {
-                      newStyle = style + `;fill:${color}`;
-                    }
-                  } else {
-                    newStyle = `fill:${color}`;
-                  }
-                  attrs['style'] = newStyle;
-                  modifiedTag = rebuildOpeningTag('path', attrs, isSelfClosing);
-                  coloredCount++;
-                } else {
-                  fallbackCount++;
-                }
+            } else if (filepath.includes('NIVEL 4 KINAL')) {
+              // Fix pale/faint lines in Nivel 4 by changing stroke-width from 1 to 24
+              if (attrs['style'] && attrs['style'].includes('stroke-width:1')) {
+                attrs['style'] = attrs['style'].replace(/stroke-width:\s*1\b/g, 'stroke-width:24');
+                modifiedTag = rebuildOpeningTag('path', attrs, isSelfClosing);
+                fixedStrokesCount++;
               }
             }
           }
@@ -507,7 +334,9 @@ function processSVG(filepath, outpath) {
   // Append remaining content
   output += content.substring(lastIndex);
   
-  console.log(`Colorized: ${coloredCount} room paths, ${fallbackCount} fallback paths.`);
+  if (filepath.includes('NIVEL 4 KINAL')) {
+    console.log(`Fixed ${fixedStrokesCount} thin strokes in Nivel 4.`);
+  }
   fs.writeFileSync(outpath, output, 'utf8');
 }
 
@@ -525,7 +354,7 @@ if (!fs.existsSync(outputDir)) {
   console.log(`Created output directory: ${outputDir}`);
 }
 
-console.log(`Colorizing maps...`);
+console.log(`Processing and cleaning maps...`);
 const files = fs.readdirSync(mapsDir).filter(f => f.toLowerCase().endsWith('.svg'));
 files.forEach(file => {
   const filepath = path.join(mapsDir, file);

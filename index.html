@@ -100,7 +100,7 @@
       padding: 1.5rem;
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 1.25rem;
       overflow-y: auto;
       z-index: 5;
     }
@@ -119,7 +119,7 @@
     .sidebar-section {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: 0.5rem;
     }
 
     /* Tool Buttons Group */
@@ -153,6 +153,53 @@
       background: var(--accent-color);
       border-color: var(--accent-color);
       box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    /* Action buttons: Autocolor & Save */
+    .action-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .action-btn {
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      padding: 0.75rem;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    .btn-autocolor {
+      background: #f97316; /* Orange */
+      box-shadow: 0 4px 10px rgba(249, 115, 22, 0.3);
+    }
+    .btn-autocolor:hover {
+      background: #ea580c;
+    }
+
+    .btn-clear {
+      background: #475569; /* Slate 600 */
+    }
+    .btn-clear:hover {
+      background: #334155;
+    }
+
+    .btn-save {
+      background: #10b981; /* Emerald 500 */
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+    }
+    .btn-save:hover {
+      background: #059669;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4);
     }
 
     /* Paint Panel (Hidden when not in paint mode) */
@@ -228,29 +275,6 @@
       cursor: pointer;
     }
 
-    /* Save Button */
-    .save-btn {
-      background: #10b981; /* Emerald 500 */
-      border: 1px solid #10b981;
-      color: #fff;
-      font-weight: 600;
-      padding: 0.85rem;
-      border-radius: 10px;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 0.5rem;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
-    }
-
-    .save-btn:hover {
-      background: #059669;
-      transform: translateY(-1px);
-      box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4);
-    }
-
     /* Level Selector Cards */
     .level-card {
       background: var(--panel-bg);
@@ -322,7 +346,6 @@
       cursor: grabbing;
     }
 
-    /* Grab override when paint tool is active */
     .viewer-container.paint-active {
       cursor: crosshair;
     }
@@ -348,7 +371,6 @@
       max-height: 85vh;
     }
 
-    /* Highlight path on hover when in paint mode */
     .viewer-container.paint-active svg path {
       pointer-events: auto;
     }
@@ -356,7 +378,7 @@
     .viewer-container.paint-active svg path:hover {
       filter: brightness(1.2);
       stroke: #f97316 !important;
-      stroke-width: 20px !important; /* Thick outline so they see what they click */
+      stroke-width: 20px !important;
     }
 
     /* Floating Controls */
@@ -552,10 +574,19 @@
         </div>
       </div>
 
-      <!-- Save map button -->
-      <button class="save-btn" id="save-map-btn" title="Guardar cambios del plano en tu disco">
-        <span>💾 Guardar Plano</span>
-      </button>
+      <!-- Actions -->
+      <div class="sidebar-section action-group">
+        <h2>Acciones</h2>
+        <button class="action-btn btn-autocolor" id="autocolor-btn" title="Colorear automáticamente basándose en los textos del plano">
+          <span>⚡ Autocolorear</span>
+        </button>
+        <button class="action-btn btn-clear" id="clear-btn" title="Limpiar todos los colores del plano">
+          <span>🧹 Limpiar Colores</span>
+        </button>
+        <button class="action-btn btn-save" id="save-map-btn" title="Guardar cambios del plano en tu disco">
+          <span>💾 Guardar Plano</span>
+        </button>
+      </div>
 
       <!-- Levels selection -->
       <div class="sidebar-section">
@@ -584,7 +615,7 @@
       <div class="loader" id="loader">
         <div class="spinner"></div>
       </div>
-      <div class="toast" id="toast">¡Plano guardado con éxito! 💾</div>
+      <div class="toast" id="toast">¡Guardado con éxito! 💾</div>
       
       <div class="canvas-wrapper" id="canvas">
         <!-- SVG content will be injected here -->
@@ -651,6 +682,8 @@
     const swatches = document.querySelectorAll('.swatch');
     const customColorInput = document.getElementById('custom-color-input');
     const saveMapBtn = document.getElementById('save-map-btn');
+    const autocolorBtn = document.getElementById('autocolor-btn');
+    const clearBtn = document.getElementById('clear-btn');
 
     let currentScale = 1;
     let currentX = 0;
@@ -660,7 +693,7 @@
     let startY = 0;
     
     let isDarkTheme = false;
-    let activeTool = 'pan'; // 'pan' or 'paint'
+    let activeTool = 'pan';
     let activePaintColor = '#FFA500';
     let currentFilename = 'NIVEL-1-KINAL.svg';
 
@@ -673,10 +706,8 @@
         if (!response.ok) throw new Error('Error al cargar plano');
         const svgText = await response.text();
         
-        // Inject SVG
         canvas.innerHTML = svgText;
         
-        // Remove style constraints from svg tag
         const svgEl = canvas.querySelector('svg');
         if (svgEl) {
           svgEl.style.width = '100%';
@@ -723,7 +754,7 @@
       }
     });
 
-    // Tool switching logic
+    // Tool switching
     toolPanBtn.addEventListener('click', () => {
       activeTool = 'pan';
       toolPanBtn.classList.add('active');
@@ -740,7 +771,7 @@
       viewer.classList.add('paint-active');
     });
 
-    // Preset color swatches handler
+    // Color Swatches
     swatches.forEach(sw => {
       sw.addEventListener('click', () => {
         swatches.forEach(s => s.classList.remove('selected'));
@@ -749,13 +780,12 @@
       });
     });
 
-    // Custom color picker handler
     customColorInput.addEventListener('input', (e) => {
       swatches.forEach(s => s.classList.remove('selected'));
       activePaintColor = e.target.value;
     });
 
-    // Click to PAINT SVG element
+    // Click to paint path in DOM
     canvas.addEventListener('click', (e) => {
       if (activeTool !== 'paint') return;
       
@@ -765,19 +795,16 @@
         e.stopPropagation();
         
         let style = path.getAttribute('style') || '';
-        
-        // Paint path fill
         if (style.includes('fill:')) {
           style = style.replace(/fill:\s*[^;]+/, `fill:${activePaintColor}`);
         } else {
           style = style + `;fill:${activePaintColor}`;
         }
-        
         path.setAttribute('style', style);
       }
     });
 
-    // Save Map POST Request
+    // Save map changes to disk
     saveMapBtn.addEventListener('click', async () => {
       const svgEl = canvas.querySelector('svg');
       if (!svgEl) return;
@@ -786,9 +813,7 @@
       try {
         const response = await fetch('/api/save-map', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             filename: currentFilename,
             svg: svgEl.outerHTML
@@ -797,20 +822,190 @@
         
         if (!response.ok) throw new Error('Error al guardar archivo');
         
-        // Show success toast
+        toast.textContent = '¡Guardado con éxito! 💾';
         toast.classList.add('visible');
         setTimeout(() => toast.classList.remove('visible'), 3000);
       } catch (err) {
         console.error(err);
-        alert('Error al guardar el plano: ' + err.message);
+        alert('Error al guardar: ' + err.message);
       } finally {
         loader.classList.remove('visible');
       }
     });
 
-    // Pan & Drag Handlers
+    // PRE-DEFINED TEXT TO COLOR PALETTE MAPPING
+    function getColorForText(text) {
+      const t = text.toLowerCase().trim();
+      if (t.match(/^b\s*\d+$/) || t === 's.s.' || t === 'ss' || t === 's.s' || t.includes('baño') || t.includes('sanitario')) {
+        return '#1E90FF'; // Azul
+      }
+      if (t === 's' || t === 'b' || t.includes('rampa') || t.includes('gradas') || t.includes('escalera') || t.includes('elevador') || t.includes('ascensor') || t.includes('conexion') || t.includes('conexión')) {
+        return '#FF4500'; // Rojo
+      }
+      if (t.includes('césped') || t.includes('cesped') || t.includes('jardín') || t.includes('jardin') || t.includes('verde') || t.includes('grama') || t.includes('jardines') || t.includes('cancha')) {
+        return '#90EE90'; // Verde claro
+      }
+      if (t.includes('planta') || t.includes('macetero') || t.includes('macetera') || t.includes('plantas')) {
+        return '#228B22'; // Verde oscuro
+      }
+      if (t.includes('concreto') || t.includes('pasillo') || t.includes('corredor') || t.includes('vestibulo') || t.includes('lobby') || t.includes('ingreso') || t.includes('parqueo') || t.includes('plaza') || t.includes('patio')) {
+        return '#D3D3D3'; // Gris
+      }
+      if (t.includes('suelo') || t.includes('colegio') || t.includes('cancha') || t.includes('patio principal')) {
+        return '#FFDAB9'; // Piel
+      }
+      const classroomKeywords = ['aula', 'sala', 'tics', 'reuniones', 'preceptoria', 'oficina', 'secretaria', 'direccion', 'coordinacion', 'orientacion', 'profesores', 'contabilidad', 'auditorio', 'fablab', 'taller', 'enfermeria', 'básicos', 'diversificado'];
+      const isCode = /^[a-z](-\d+|\d+)$/i.test(t);
+      if (isCode || classroomKeywords.some(kw => t.includes(kw))) {
+        return '#FFA500'; // Naranja
+      }
+      return '#FFE4C4'; // Bisque fallback
+    }
+
+    function isLayoutText(text) {
+      const layoutKeywords = [
+        'PLANTA', 'ESCALA', 'CONSTRUYE', 'PROPIETARIO', 'EJECUTOR', 'CONTENIDO', 
+        'PROYECTO', 'DISEÑO', 'DIBUJO', 'FECHA', 'MAYO', 'TIMBRE', 'HOJA', 
+        'FIRMA', 'OBSERVACIONES', 'MARGEN', 'CAJETIN', 'KINAL', 'FIRMA Y SELLO', 
+        'ESCALA INDICADA', 'AREA DE AMBIENTES', 'Y CIRCULACION', 'C.S.C.M', 'RUTAS DE EVACUACIÓN',
+        'NIVEL', 'PRIMER', 'SEGUNDO', 'TERCER', 'CUARTO'
+      ];
+      return layoutKeywords.some(kw => text.toUpperCase().includes(kw));
+    }
+
+    // CLIENT-SIDE AUTO-COLORIZER
+    autocolorBtn.addEventListener('click', () => {
+      const svgEl = canvas.querySelector('svg');
+      if (!svgEl) return;
+      
+      loader.classList.add('visible');
+      setTimeout(() => {
+        try {
+          // 1. Find all text nodes and map their center coordinates
+          const textElements = svgEl.querySelectorAll('text');
+          const texts = Array.from(textElements).map(t => {
+            const bbox = t.getBBox();
+            return {
+              text: t.textContent.replace(/<[^>]*>/g, '').trim(),
+              x: bbox.x + bbox.width / 2,
+              y: bbox.y + bbox.height / 2
+            };
+          }).filter(t => t.text && !isLayoutText(t.text));
+
+          // 2. Loop through all paths and colorize floor patterns/outlines based on proximity
+          const paths = svgEl.querySelectorAll('path');
+          let coloredCount = 0;
+          
+          paths.forEach(path => {
+            const id = path.getAttribute('id') || '';
+            // Skip cancha background path if it's already green, or we can color it
+            if (id === 'cancha-grass-field') {
+              path.setAttribute('style', 'fill:#90EE90;stroke:none;');
+              return;
+            }
+
+            const bbox = path.getBBox();
+            const area = bbox.width * bbox.height;
+            if (area >= 5000000 || bbox.width < 2 || bbox.height < 2) return;
+            
+            const style = path.getAttribute('style') || '';
+            const fill = path.getAttribute('fill') || '';
+            
+            const isWhiteFill = fill.toLowerCase() === '#ffffff' || 
+                                fill.toLowerCase() === 'white' || 
+                                fill.toLowerCase() === '#fff' ||
+                                style.toLowerCase().includes('fill:#ffffff') ||
+                                style.toLowerCase().includes('fill:white') ||
+                                style.toLowerCase().includes('fill:#fff') ||
+                                (!style.includes('fill:') && !fill);
+                                
+            const isNoFillOutline = style.toLowerCase().includes('fill:none') && 
+                                    style.toLowerCase().includes('stroke:#000000') &&
+                                    area > 200 && bbox.width > 5 && bbox.height > 5;
+                                    
+            if (isWhiteFill || isNoFillOutline) {
+              const cx = bbox.x + bbox.width / 2;
+              const cy = bbox.y + bbox.height / 2;
+              
+              let closestText = null;
+              let minDist = Infinity;
+              
+              texts.forEach(t => {
+                const dist = Math.hypot(cx - t.x, cy - t.y);
+                if (dist < minDist) {
+                  minDist = dist;
+                  closestText = t;
+                }
+              });
+              
+              if (closestText && minDist < 200) {
+                const color = getColorForText(closestText.text);
+                let newStyle = style;
+                if (style.includes('fill:')) {
+                  newStyle = style.replace(/fill:\s*[^;]+/, `fill:${color}`);
+                } else {
+                  newStyle = style + `;fill:${color}`;
+                }
+                path.setAttribute('style', newStyle);
+                coloredCount++;
+              }
+            }
+          });
+          
+          toast.textContent = '¡Coloreado con éxito! ⚡';
+          toast.classList.add('visible');
+          setTimeout(() => toast.classList.remove('visible'), 3000);
+        } catch (err) {
+          console.error(err);
+          alert('Error en autocoloreado: ' + err.message);
+        } finally {
+          loader.classList.remove('visible');
+        }
+      }, 50);
+    });
+
+    // CLIENT-SIDE CLEAR ALL COLORS
+    clearBtn.addEventListener('click', () => {
+      const svgEl = canvas.querySelector('svg');
+      if (!svgEl) return;
+      
+      loader.classList.add('visible');
+      setTimeout(() => {
+        try {
+          const paths = svgEl.querySelectorAll('path');
+          paths.forEach(path => {
+            const id = path.getAttribute('id') || '';
+            if (id === 'cancha-grass-field') {
+              path.setAttribute('style', 'fill:#ffffff;stroke:#000000;stroke-width:24;');
+              return;
+            }
+            
+            const bbox = path.getBBox();
+            const area = bbox.width * bbox.height;
+            if (area >= 5000000) return;
+            
+            let style = path.getAttribute('style') || '';
+            if (style.includes('fill:')) {
+              // Revert back to white fill
+              style = style.replace(/fill:\s*[^;]+/, 'fill:#ffffff');
+              path.setAttribute('style', style);
+            }
+          });
+          
+          toast.textContent = '¡Colores borrados! 🧹';
+          toast.classList.add('visible');
+          setTimeout(() => toast.classList.remove('visible'), 3000);
+        } catch (err) {
+          console.error(err);
+          alert('Error al limpiar: ' + err.message);
+        } finally {
+          loader.classList.remove('visible');
+        }
+      }, 50);
+    });
+
+    // Pan & Drag
     viewer.addEventListener('mousedown', (e) => {
-      // Disallow drag pan on shape click if in paint mode
       if (activeTool === 'paint' && e.target.closest('path')) return;
       if (e.target.closest('.controls') || e.target.closest('.legend-panel')) return;
       
@@ -830,7 +1025,7 @@
       updateTransform();
     });
 
-    // Wheel Zoom Handler
+    // Wheel Zoom
     viewer.addEventListener('wheel', (e) => {
       e.preventDefault();
       const zoomFactor = 1.1;
@@ -852,7 +1047,7 @@
       updateTransform();
     }, { passive: false });
 
-    // Buttons zoom handlers
+    // Buttons zoom
     document.getElementById('zoom-in').addEventListener('click', () => {
       currentScale = Math.min(currentScale * 1.2, 5);
       updateTransform();
