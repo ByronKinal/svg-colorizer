@@ -614,6 +614,12 @@
 
         <!-- Custom Polygons specific options (Shown only when in draw mode) -->
         <div id="draw-options" style="display: none; margin-top: 0.5rem; flex-direction: column; gap: 0.5rem;">
+          
+          <!-- Explicit Start/Add Polygon button to ensure they can draw new shapes even if one is selected -->
+          <button class="action-btn" id="add-poly-btn" style="background: #38bdf8; width: 100%; margin-bottom: 0.25rem;" title="Comenzar a dibujar un nuevo polígono libre">
+            <span>➕ Dibujar Nueva Forma</span>
+          </button>
+
           <div style="border-top: 1px solid var(--panel-border); padding-top: 0.5rem;">
             <label style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
               <span>Opacidad:</span>
@@ -623,7 +629,7 @@
           </div>
           
           <div class="helper-text">
-            👉 Haz clic en el mapa para colocar los puntos.<br>
+            👉 Haz clic en el plano para colocar los puntos.<br>
             👉 Doble clic o presiona Enter para cerrar la forma.<br>
             👉 Arrastra los puntos celestes para ajustar la forma.
           </div>
@@ -750,6 +756,7 @@
     const clearBtn = document.getElementById('clear-btn');
     
     // Draw specific controls
+    const addPolyBtn = document.getElementById('add-poly-btn');
     const deleteRectBtn = document.getElementById('delete-rect-btn');
     const rectOpacityInput = document.getElementById('rect-opacity-input');
     const opacityValSpan = document.getElementById('opacity-val');
@@ -1187,6 +1194,17 @@
       drawDots.forEach(d => d.remove());
       drawDots = [];
     }
+
+    // Explicit Start/Add Polygon button handler
+    addPolyBtn.addEventListener('click', () => {
+      deselectPoly();
+      cancelDrawing();
+      
+      // Visual feedback via toast
+      toast.textContent = 'Modo Dibujo: Haz clic en el mapa para empezar';
+      toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), 2500);
+    });
 
     // Move/Resize mouse movements
     viewer.addEventListener('pointermove', (e) => {
