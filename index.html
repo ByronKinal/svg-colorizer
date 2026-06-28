@@ -588,8 +588,8 @@
           <button class="tool-btn" id="tool-paint" title="Pintar salones y espacios">
             <span>🪣 Pintar</span>
           </button>
-          <button class="tool-btn" id="tool-draw" title="Dibujar bloques de colores libres">
-            <span>📐 Dibujar</span>
+          <button class="tool-btn" id="tool-draw" title="Crear y editar bloques de colores libres">
+            <span>📐 Bloques</span>
           </button>
         </div>
       </div>
@@ -617,8 +617,8 @@
         <div id="draw-options" style="display: none; margin-top: 0.5rem; flex-direction: column; gap: 0.5rem;">
           
           <!-- Explicit Start/Add Polygon button to ensure they can draw new shapes even if one is selected -->
-          <button class="action-btn" id="add-poly-btn" style="background: #38bdf8; width: 100%; margin-bottom: 0.25rem;" title="Comenzar a dibujar un nuevo polígono libre">
-            <span>➕ Dibujar Nueva Forma</span>
+          <button class="action-btn" id="add-poly-btn" style="background: #38bdf8; width: 100%; margin-bottom: 0.25rem;" title="Crear un nuevo cuadrado de color en el plano">
+            <span>➕ Crear Cuadrado</span>
           </button>
 
           <!-- Explicit button to add a point to the currently selected shape -->
@@ -635,12 +635,10 @@
           </div>
           
           <div class="helper-text">
-            👉 Haz clic en el plano para colocar los puntos.<br>
-            👉 Doble clic o presiona Enter para cerrar la forma.<br>
-            👉 Haz **clic sobre una línea** para añadir un punto nuevo.<br>
-            👉 O usa el botón verde **➕ Añadir Punto a Forma**.<br>
-            👉 Haz **doble clic en un punto celeste** para eliminarlo.<br>
-            👉 Arrastra los puntos celestes para ajustar la forma.
+            👉 Haz clic en **➕ Crear Cuadrado** para añadir un bloque.<br>
+            👉 Arrastra los puntos celestes para ajustar la forma al plano.<br>
+            👉 Haz **clic sobre una línea** (o usa el botón verde) para añadir esquinas.<br>
+            👉 Doble clic en un punto celeste para eliminarlo.
           </div>
 
           <button class="action-btn" id="delete-rect-btn" style="background: #ef4444; width: 100%;" title="Eliminar la forma seleccionada">
@@ -1110,7 +1108,6 @@
     // Handle clicks/selections on canvas
     viewer.addEventListener('pointerdown', (e) => {
       if (activeTool !== 'draw') return;
-      if (isDrawingPoly) return; // ignore selections during active draw
       
       const poly = e.target.closest('.custom-poly');
       if (poly) {
@@ -1129,7 +1126,7 @@
       }
     });
 
-    // Start drawing vertex placement when clicking empty canvas wrapper
+    // Handle clicks on canvas to insert new vertices on segment borders
     viewer.addEventListener('click', (e) => {
       if (activeTool !== 'draw') return;
       if (e.target.closest('.sidebar') || e.target.closest('.controls') || e.target.closest('.legend-panel')) return;
@@ -1140,7 +1137,7 @@
       const y = (e.clientY - rect.top) / currentScale;
       
       // If a polygon is selected and we click on its border, ADD a new vertex point!
-      if (selectedPoly && !isDrawingPoly && !e.target.closest('#poly-handles-group')) {
+      if (selectedPoly && !e.target.closest('#poly-handles-group')) {
         const pts = getPathPoints(selectedPoly);
         if (pts.length >= 3) {
           for (let i = 0; i < pts.length; i++) {
@@ -1173,120 +1170,56 @@
           }
         }
       }
-
-      if (e.target.closest('.custom-poly')) return;
-
-      if (!isDrawingPoly) {
-        // Start new drawing
-        isDrawingPoly = true;
-        polyPoints = [{ x, y }];
-        deselectPoly();
-        
-        // Create active path container
-        const blockGroup = canvas.querySelector('#custom-color-blocks');
-        
-        tempPolyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-        tempPolyline.setAttribute('stroke', '#38bdf8');
-        tempPolyline.setAttribute('stroke-width', '3');
-        tempPolyline.setAttribute('stroke-dasharray', '5,5');
-        tempPolyline.setAttribute('fill', 'none');
-        blockGroup.appendChild(tempPolyline);
-        
-        tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        tempLine.setAttribute('stroke', '#38bdf8');
-        tempLine.setAttribute('stroke-width', '2');
-        tempLine.setAttribute('stroke-dasharray', '3,3');
-        blockGroup.appendChild(tempLine);
-        
-        addDrawDot(x, y);
-      } else {
-        // Check if clicked close to the first point to CLOSE
-        const dist = Math.hypot(x - polyPoints[0].x, y - polyPoints[0].y);
-        if (dist < 12) {
-          finishDrawing();
-        } else {
-          // Add point
-          polyPoints.push({ x, y });
-          addDrawDot(x, y);
-          updateTempPolyline();
-        }
-      }
     });
 
-    // Add visible placeholder dot during drawing
-    function addDrawDot(x, y) {
-      const blockGroup = canvas.querySelector('#custom-color-blocks');
-      const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      dot.setAttribute('cx', x);
-      dot.setAttribute('cy', y);
-      dot.setAttribute('r', '5');
-      dot.setAttribute('fill', '#38bdf8');
-      blockGroup.appendChild(dot);
-      drawDots.push(dot);
-    }
-
-    function updateTempPolyline() {
-      if (!tempPolyline) return;
-      const ptsStr = polyPoints.map(p => `${p.x},${p.y}`).join(' ');
-      tempPolyline.setAttribute('points', ptsStr);
-    }
-
-    // Double click closes and finishes the shape immediately
-    viewer.addEventListener('dblclick', (e) => {
-      if (activeTool === 'draw' && isDrawingPoly) {
-        e.preventDefault();
-        e.stopPropagation();
-        finishDrawing();
-      }
-    });
-
-    // Press Enter to close shape
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && activeTool === 'draw' && isDrawingPoly) {
-        finishDrawing();
-      }
-    });
-
-    function finishDrawing() {
-      if (polyPoints.length < 3) {
-        cancelDrawing();
-        return;
-      }
+    // Explicit Crear Cuadrado button handler
+    addPolyBtn.addEventListener('click', () => {
+      const svgEl = canvas.querySelector('svg');
+      if (!svgEl) return;
       
-      const blockGroup = canvas.querySelector('#custom-color-blocks');
+      const blockGroup = svgEl.querySelector('#custom-color-blocks');
+      if (!blockGroup) return;
+      
+      deselectPoly();
+      
+      // Determine center of current viewport in absolute coordinate space
+      const rawCenterX = (viewer.clientWidth / 2 - currentX) / currentScale;
+      const rawCenterY = (viewer.clientHeight / 2 - currentY) / currentScale;
+      
+      // Standard default rectangle size (200x150 px)
+      const w = 200;
+      const h = 150;
+      
+      const x1 = rawCenterX - w / 2;
+      const y1 = rawCenterY - h / 2;
+      const x2 = rawCenterX + w / 2;
+      const y2 = rawCenterY - h / 2;
+      const x3 = rawCenterX + w / 2;
+      const y3 = rawCenterY + h / 2;
+      const x4 = rawCenterX - w / 2;
+      const y4 = rawCenterY + h / 2;
+      
+      const pts = [
+        { x: x1, y: y1 },
+        { x: x2, y: y2 },
+        { x: x3, y: y3 },
+        { x: x4, y: y4 }
+      ];
+      
       const newPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       newPath.setAttribute('class', 'custom-poly');
       newPath.setAttribute('fill', activePaintColor);
       newPath.setAttribute('fill-opacity', activeRectOpacity);
       newPath.setAttribute('style', 'stroke:none;');
       
-      setPathPoints(newPath, polyPoints);
+      setPathPoints(newPath, pts);
       
-      // Insert path before the handles group layer
+      // Insert path before the handles group layer so handles remain on top
       blockGroup.insertBefore(newPath, handlesGroup);
       
-      cancelDrawing();
       selectPoly(newPath);
-    }
-
-    function cancelDrawing() {
-      isDrawingPoly = false;
-      polyPoints = [];
       
-      if (tempPolyline) { tempPolyline.remove(); tempPolyline = null; }
-      if (tempLine) { tempLine.remove(); tempLine = null; }
-      
-      drawDots.forEach(d => d.remove());
-      drawDots = [];
-    }
-
-    // Explicit Start/Add Polygon button handler
-    addPolyBtn.addEventListener('click', () => {
-      deselectPoly();
-      cancelDrawing();
-      
-      // Visual feedback via toast
-      toast.textContent = 'Modo Dibujo: Haz clic en el mapa para empezar';
+      toast.textContent = 'Bloque cuadrado creado. Arrastra sus esquinas.';
       toast.classList.add('visible');
       setTimeout(() => toast.classList.remove('visible'), 2500);
     });
@@ -1314,15 +1247,6 @@
       const rect = canvas.getBoundingClientRect();
       const x = (e.clientX - rect.left) / currentScale;
       const y = (e.clientY - rect.top) / currentScale;
-
-      // Update cursor preview line during drawing
-      if (isDrawingPoly && tempLine && polyPoints.length > 0) {
-        const lastPt = polyPoints[polyPoints.length - 1];
-        tempLine.setAttribute('x1', lastPt.x);
-        tempLine.setAttribute('y1', lastPt.y);
-        tempLine.setAttribute('x2', x);
-        tempLine.setAttribute('y2', y);
-      }
 
       if (activeTool !== 'draw' || !selectedPoly) return;
       
