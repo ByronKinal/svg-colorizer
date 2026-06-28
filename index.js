@@ -192,13 +192,14 @@ function getColorForText(text) {
   return '#FFE4C4'; // Fallback Bisque
 }
 
-// 8. Rebuilding sequential SVG parser
+// 8. Rebuilding sequential SVG parser with clipPath safety
 function processSVG(filepath, outpath) {
   console.log(`\n=========================================`);
   console.log(`Processing SVG: ${path.basename(filepath)}`);
   const content = fs.readFileSync(filepath, 'utf8');
 
-  const tagRegex = /(<g[^>]*>|<\/g>|<text[^>]*>[\s\S]*?<\/text>|<path[^>]*>)/gi;
+  // Tag Regex includes clipPath boundaries to ensure they remain unmodified
+  const tagRegex = /(<g[^>]*>|<\/g>|<text[^>]*>[\s\S]*?<\/text>|<path[^>]*>|<clipPath[^>]*>|<\/clipPath>)/gi;
   
   // --- PASS 1: Collect room texts and their absolute coordinates ---
   const transformStack = [[1, 0, 0, 1, 0, 0]];
@@ -212,9 +213,20 @@ function processSVG(filepath, outpath) {
   ];
 
   let match;
+  let inClipPath = false;
   tagRegex.lastIndex = 0;
   while ((match = tagRegex.exec(content)) !== null) {
     const tag = match[0];
+    
+    if (tag.startsWith('<clipPath') || tag.startsWith('<clipPath')) {
+      inClipPath = true;
+      continue;
+    } else if (tag.startsWith('</clipPath') || tag.startsWith('</clipPath')) {
+      inClipPath = false;
+      continue;
+    }
+    
+    if (inClipPath) continue;
     
     if (tag.startsWith('<g') || tag.startsWith('<G')) {
       const transformMatch = tag.match(/\btransform="([^"]+)"/i);
@@ -279,6 +291,7 @@ function processSVG(filepath, outpath) {
   
   let coloredCount = 0;
   let fallbackCount = 0;
+  inClipPath = false;
 
   tagRegex.lastIndex = 0;
   while ((match = tagRegex.exec(content)) !== null) {
@@ -290,6 +303,21 @@ function processSVG(filepath, outpath) {
     lastIndex = tagRegex.lastIndex;
     
     let modifiedTag = tag;
+    
+    if (tag.startsWith('<clipPath') || tag.startsWith('<clipPath')) {
+      inClipPath = true;
+      output += tag;
+      continue;
+    } else if (tag.startsWith('</clipPath') || tag.startsWith('</clipPath')) {
+      inClipPath = false;
+      output += tag;
+      continue;
+    }
+    
+    if (inClipPath) {
+      output += tag; // Never touch elements inside clipPaths
+      continue;
+    }
     
     if (tag.startsWith('<g') || tag.startsWith('<G')) {
       const attrs = parseAttributes(tag);
