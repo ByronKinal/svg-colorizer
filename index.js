@@ -196,7 +196,12 @@ function getColorForText(text) {
 // 8. Rebuilding sequential SVG parser with clipPath safety & white-fills colorization
 function processSVG(filepath, outpath) {
   console.log(`Processing SVG: ${path.basename(filepath)}`);
-  const content = fs.readFileSync(filepath, 'utf8');
+  let content = fs.readFileSync(filepath, 'utf8');
+
+  // Inject synthetic grass field path for Nivel 1 at the root level right after </defs>
+  if (filepath.includes('NIVEL-1-KINAL')) {
+    content = content.replace('</defs>', '</defs><path id="cancha-grass-field" transform="matrix(0.04, 0, 0, 0.04, 0, 0)" d="M 3278,1353 H 24500 V 27000 H 13100 L 3278,29500 Z" style="fill:#90EE90;stroke:none;" />');
+  }
 
   const tagRegex = /(<g[^>]*>|<\/g>|<text[^>]*>[\s\S]*?<\/text>|<path[^>]*>|<clipPath[^>]*>|<\/clipPath>)/gi;
   
@@ -301,7 +306,6 @@ function processSVG(filepath, outpath) {
   let coloredCount = 0;
   let fallbackCount = 0;
   inClipPath = false;
-  let canchaInjected = false;
 
   tagRegex.lastIndex = 0;
   while ((match = tagRegex.exec(content)) !== null) {
@@ -354,12 +358,6 @@ function processSVG(filepath, outpath) {
           attrs['style'] = 'display:none;';
         }
         modifiedTag = rebuildOpeningTag('g', attrs, false);
-      }
-      
-      // Inject synthetic grass field path INSIDE the main transformed group, right after the group opening tag
-      if (!canchaInjected && filepath.includes('NIVEL-1-KINAL') && id.startsWith('g')) {
-        modifiedTag = tag + '<path id="cancha-grass-field" d="M 3278,1353 H 24500 V 27000 H 13100 L 3278,29500 Z" style="fill:#90EE90;stroke:none;" />';
-        canchaInjected = true;
       }
       
     } else if (tag === '</g>' || tag === '</G>') {
@@ -464,7 +462,7 @@ function processSVG(filepath, outpath) {
                                       area > 200 && width > 5 && height > 5;
                                       
               if ((isWhiteFill || isNoFillOutline) && center.x < 2850 && width > 2 && height > 2) {
-                // Match closest room text label with increased 800 units search radius for Nivel 1
+                // Reverted to robust 200 units matching limit to prevent color bleeding in Nivel 1
                 let closestText = null;
                 let minDist = Infinity;
                 
@@ -476,7 +474,7 @@ function processSVG(filepath, outpath) {
                   }
                 });
                 
-                if (closestText && minDist < 800) {
+                if (closestText && minDist < 200) {
                   const color = getColorForText(closestText.text);
                   
                   let newStyle = '';
