@@ -149,16 +149,13 @@ function multiplyMatrices(A, B) {
   ];
 }
 
-// 8. Rebuilding sequential SVG parser: Cleans layout margins/labels, fixes stroke widths, and injects cancha background
+// 8. Rebuilding sequential SVG parser: Cleans layout margins/labels, fixes stroke widths
 function processSVG(filepath, outpath) {
   console.log(`Processing SVG: ${path.basename(filepath)}`);
   let content = fs.readFileSync(filepath, 'utf8');
 
-  // Inject synthetic grass field path for Nivel 1 at the root level right after </defs>
-  // Changed stroke to 'none' so that the duplicate outline rectangle is completely invisible!
-  if (filepath.includes('NIVEL-1-KINAL')) {
-    content = content.replace('</defs>', '</defs><path id="cancha-grass-field" transform="matrix(0.04, 0, 0, 0.04, 0, 0)" d="M 3278,13500 H 24500 V 27000 H 13100 L 3278,29500 Z" style="fill:#ffffff;stroke:none;" />');
-  }
+  // Completely removed the hardcoded green cancha path injection in Nivel 1,
+  // as the user can now draw and style custom color blocks exactly as desired.
 
   const tagRegex = /(<g[^>]*>|<\/g>|<text[^>]*>[\s\S]*?<\/text>|<path[^>]*>|<clipPath[^>]*>|<\/clipPath>)/gi;
   

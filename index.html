@@ -395,12 +395,12 @@
 
     .viewer-container.blocks-active svg .custom-rect:hover {
       stroke: #f97316 !important;
-      stroke-width: 100px !important;
+      stroke-width: 4px !important;
     }
 
     .viewer-container.blocks-active svg .custom-rect.selected {
       stroke: #38bdf8 !important;
-      stroke-width: 120px !important;
+      stroke-width: 5px !important;
     }
 
     /* Floating Controls */
@@ -754,7 +754,7 @@
     let activeRectOpacity = 0.7;
     let currentFilename = 'NIVEL-1-KINAL.svg';
 
-    // Blocks manipulation state
+    // Blocks manipulation state (Now working in absolute, non-inverted root SVG space!)
     let selectedRect = null;
     let resizeHandle = null;
     
@@ -785,7 +785,7 @@
           svgEl.style.width = '100%';
           svgEl.style.height = '100%';
           
-          // Setup custom-color-blocks container and selection circle handles inside SVG
+          // Setup custom-color-blocks container at the root level of the SVG (outside AutoCAD inversion group!)
           setupBlocksContainer(svgEl);
         }
         
@@ -926,15 +926,13 @@
 
     // Setup blocks container & handles inside SVG structure
     function setupBlocksContainer(svgEl) {
-      const mainGroup = svgEl.querySelector('g');
-      if (!mainGroup) return;
-
-      // 1. Find or create custom blocks group layer as the first child of the main group so it stays under lines
-      let blockGroup = mainGroup.querySelector('#custom-color-blocks');
+      // Find or create custom blocks group layer at the ROOT level of the SVG,
+      // right before the first <g> group. This bypasses AutoCAD scale flips completely!
+      let blockGroup = svgEl.querySelector('#custom-color-blocks');
       if (!blockGroup) {
         blockGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         blockGroup.setAttribute('id', 'custom-color-blocks');
-        mainGroup.insertBefore(blockGroup, mainGroup.firstChild);
+        svgEl.insertBefore(blockGroup, svgEl.querySelector('g'));
       }
 
       // Add class and interactability to any existing rects in this group
@@ -943,15 +941,15 @@
         r.classList.add('custom-rect');
       });
 
-      // 2. Create the shared single resize handle circle at the bottom of blockGroup
+      // Create the shared single resize handle circle at the bottom of blockGroup
       let handle = blockGroup.querySelector('#rect-resize-handle');
       if (!handle) {
         handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         handle.setAttribute('id', 'rect-resize-handle');
-        handle.setAttribute('r', '250'); // Perfect visible size in raw units
+        handle.setAttribute('r', '8'); // standard absolute pixels
         handle.setAttribute('fill', '#ffffff');
         handle.setAttribute('stroke', '#38bdf8');
-        handle.setAttribute('stroke-width', '80');
+        handle.setAttribute('stroke-width', '3');
         handle.setAttribute('style', 'cursor: se-resize; display: none; pointer-events: auto;');
         blockGroup.appendChild(handle);
       }
@@ -1040,11 +1038,9 @@
     viewer.addEventListener('pointermove', (e) => {
       if (activeTool !== 'blocks' || !selectedRect) return;
       
-      // Calculate delta in raw SVG/CAD coordinate space
-      // RawScale = screenScale * 0.04 (due to AutoCAD scaling matrix)
-      const rawScale = currentScale * 0.04;
-      const dx = (e.clientX - startMouseX) / rawScale;
-      const dy = (e.clientY - startMouseY) / rawScale;
+      // Calculate delta in absolute SVG viewport space
+      const dx = (e.clientX - startMouseX) / currentScale;
+      const dy = (e.clientY - startMouseY) / currentScale;
       
       if (isDraggingRect) {
         e.preventDefault();
@@ -1060,8 +1056,8 @@
         resizeHandle.setAttribute('cy', nextY + h);
       } else if (isResizingRect) {
         e.preventDefault();
-        const nextW = Math.max(500, rectStartWidth + dx); // min width 500 raw units
-        const nextH = Math.max(500, rectStartHeight + dy); // min height 500 raw units
+        const nextW = Math.max(20, rectStartWidth + dx); // min width 20px
+        const nextH = Math.max(20, rectStartHeight + dy); // min height 20px
         selectedRect.setAttribute('width', nextW);
         selectedRect.setAttribute('height', nextH);
         
@@ -1086,14 +1082,13 @@
       const blockGroup = svgEl.querySelector('#custom-color-blocks');
       if (!blockGroup) return;
       
-      // Determine center of current viewport in raw coordinate space
-      const rawScale = currentScale * 0.04;
-      const rawCenterX = (viewer.clientWidth / 2 - currentX) / rawScale;
-      const rawCenterY = (viewer.clientHeight / 2 - currentY) / rawScale;
+      // Determine center of current viewport in absolute coordinate space
+      const rawCenterX = (viewer.clientWidth / 2 - currentX) / currentScale;
+      const rawCenterY = (viewer.clientHeight / 2 - currentY) / currentScale;
       
-      // Standard default rectangle size (roughly 240x160 px on screen at zoom 1)
-      const rectW = 6000;
-      const rectH = 4000;
+      // Standard default rectangle size (roughly 240x160 px on screen)
+      const rectW = 240;
+      const rectH = 160;
       
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       rect.setAttribute('class', 'custom-rect');
@@ -1214,11 +1209,6 @@
           
           paths.forEach(path => {
             const id = path.getAttribute('id') || '';
-            if (id === 'cancha-grass-field') {
-              path.setAttribute('style', 'fill:#90EE90;stroke:none;');
-              return;
-            }
-
             const bbox = path.getBBox();
             const area = bbox.width * bbox.height;
             if (area >= 5000000 || bbox.width < 2 || bbox.height < 2) return;
@@ -1289,12 +1279,6 @@
         try {
           const paths = svgEl.querySelectorAll('path');
           paths.forEach(path => {
-            const id = path.getAttribute('id') || '';
-            if (id === 'cancha-grass-field') {
-              path.setAttribute('style', 'fill:#ffffff;stroke:none;');
-              return;
-            }
-            
             const bbox = path.getBBox();
             const area = bbox.width * bbox.height;
             if (area >= 5000000) return;
