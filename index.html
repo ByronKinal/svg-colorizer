@@ -631,6 +631,8 @@
           <div class="helper-text">
             👉 Haz clic en el plano para colocar los puntos.<br>
             👉 Doble clic o presiona Enter para cerrar la forma.<br>
+            👉 Haz **clic sobre una línea** para añadir un punto nuevo.<br>
+            👉 Haz **doble clic en un punto celeste** para eliminarlo.<br>
             👉 Arrastra los puntos celestes para ajustar la forma.
           </div>
 
@@ -854,6 +856,7 @@
       updateTransform();
     }
 
+    // Update transform without will-change:transform for vector sharpness
     function updateTransform() {
       canvas.style.transform = `translate(${currentX}px, ${currentY}px) scale(${currentScale})`;
     }
@@ -898,6 +901,7 @@
       toolPanBtn.classList.remove('active');
       toolDrawBtn.classList.remove('active');
       
+      paletteTitle.textContent = "Elegir Color de Pintura";
       editPanel.style.display = 'flex';
       drawOptions.style.display = 'none';
       viewer.className = 'viewer-container paint-active';
@@ -909,6 +913,7 @@
       toolPanBtn.classList.remove('active');
       toolPaintBtn.classList.remove('active');
       
+      paletteTitle.textContent = "Color del Rectángulo";
       editPanel.style.display = 'flex';
       drawOptions.style.display = 'flex';
       viewer.className = 'viewer-container draw-active';
@@ -1044,6 +1049,7 @@
         handle.setAttribute('style', 'cursor: pointer; pointer-events: auto;');
         handle.setAttribute('data-index', idx);
         
+        // Single click and drag to move vertex
         handle.addEventListener('pointerdown', (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1052,6 +1058,20 @@
           startMouseX = e.clientX;
           startMouseY = e.clientY;
           polyStartPoints = getPathPoints(selectedPoly);
+        });
+
+        // Double click on a vertex handle to delete it!
+        handle.addEventListener('dblclick', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const currentPts = getPathPoints(selectedPoly);
+          if (currentPts.length > 3) {
+            currentPts.splice(idx, 1);
+            setPathPoints(selectedPoly, currentPts);
+            renderPolyHandles();
+          } else {
+            alert('Un polígono debe tener al menos 3 puntos.');
+          }
         });
         
         handlesGroup.appendChild(handle);
@@ -1084,13 +1104,48 @@
     viewer.addEventListener('click', (e) => {
       if (activeTool !== 'draw') return;
       if (e.target.closest('.sidebar') || e.target.closest('.controls') || e.target.closest('.legend-panel')) return;
-      if (e.target.closest('.custom-poly') || e.target.closest('#poly-handles-group')) return;
       
       // Calculate local mouse click coordinate inside SVG sheet
       const rect = canvas.getBoundingClientRect();
       const x = (e.clientX - rect.left) / currentScale;
       const y = (e.clientY - rect.top) / currentScale;
       
+      // If a polygon is selected and we click on its border, ADD a new vertex point!
+      if (selectedPoly && !isDrawingPoly && !e.target.closest('#poly-handles-group')) {
+        const pts = getPathPoints(selectedPoly);
+        if (pts.length >= 3) {
+          for (let i = 0; i < pts.length; i++) {
+            const ax = pts[i].x;
+            const ay = pts[i].y;
+            const bx = pts[(i + 1) % pts.length].x;
+            const by = pts[(i + 1) % pts.length].y;
+            const dx = bx - ax;
+            const dy = by - ay;
+            const lenSq = dx * dx + dy * dy;
+            let t = 0;
+            if (lenSq > 0) {
+              t = ((x - ax) * dx + (y - ay) * dy) / lenSq;
+              t = Math.max(0, Math.min(1, t));
+            }
+            const projX = ax + t * dx;
+            const projY = ay + t * dy;
+            const dist = Math.hypot(x - projX, y - projY);
+            
+            // If user clicked close to this segment (within 12 pixels), insert new vertex point
+            if (dist < 12) {
+              e.preventDefault();
+              e.stopPropagation();
+              pts.splice(i + 1, 0, { x, y });
+              setPathPoints(selectedPoly, pts);
+              renderPolyHandles();
+              return;
+            }
+          }
+        }
+      }
+
+      if (e.target.closest('.custom-poly')) return;
+
       if (!isDrawingPoly) {
         // Start new drawing
         isDrawingPoly = true;
@@ -1201,7 +1256,7 @@
       cancelDrawing();
       
       // Visual feedback via toast
-      toast.textContent = 'Modo Dibujo: Haz clic en el mapa para empezar';
+      toast.textContent = 'Modo Dibujo: Haz clic en el plano para empezar';
       toast.classList.add('visible');
       setTimeout(() => toast.classList.remove('visible'), 2500);
     });
