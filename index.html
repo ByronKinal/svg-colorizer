@@ -655,9 +655,16 @@
         <button class="action-btn btn-clear" id="clear-btn" title="Limpiar todos los colores del plano">
           <span>🧹 Limpiar</span>
         </button>
-        <button class="action-btn btn-save" id="save-map-btn" title="Guardar cambios del plano en tu disco">
-          <span>💾 Guardar Plano</span>
+        <button class="action-btn btn-save" id="save-map-btn" title="Guardar cambios del plano en tu servidor">
+          <span>💾 Guardar</span>
         </button>
+        <button class="action-btn" id="download-btn" style="background: #3b82f6; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);" title="Descargar plano SVG directamente a tu computadora">
+          <span>📥 Descargar</span>
+        </button>
+        <button class="action-btn" id="upload-btn" style="background: #a855f7; grid-column: span 2; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);" title="Subir un plano SVG de tu computadora para colorearlo">
+          <span>📤 Subir Plano (.svg)</span>
+        </button>
+        <input type="file" id="file-uploader" accept=".svg" style="display: none;">
       </div>
 
       <!-- Levels selection -->
@@ -760,6 +767,9 @@
     const swatches = document.querySelectorAll('.swatch');
     const customColorInput = document.getElementById('custom-color-input');
     const saveMapBtn = document.getElementById('save-map-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const uploadBtn = document.getElementById('upload-btn');
+    const fileUploader = document.getElementById('file-uploader');
     const autocolorBtn = document.getElementById('autocolor-btn');
     const clearBtn = document.getElementById('clear-btn');
     
@@ -1337,6 +1347,63 @@
       } finally {
         loader.classList.remove('visible');
       }
+    });
+
+    // Download SVG plan locally
+    downloadBtn.addEventListener('click', () => {
+      const svgEl = canvas.querySelector('svg');
+      if (!svgEl) return;
+      
+      deselectPoly(); // Hide selection outline/handles before exporting
+      
+      const svgString = svgEl.outerHTML;
+      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = currentFilename || 'plano.svg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.textContent = '¡Plano descargado con éxito! 📥';
+      toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), 2500);
+    });
+
+    // Upload local SVG plan
+    uploadBtn.addEventListener('click', () => {
+      fileUploader.click();
+    });
+
+    fileUploader.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      currentFilename = file.name;
+      
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const svgText = evt.target.result;
+        
+        // Inject SVG text directly
+        canvas.innerHTML = svgText;
+        
+        const svgEl = canvas.querySelector('svg');
+        if (svgEl) {
+          svgEl.style.width = '100%';
+          svgEl.style.height = '100%';
+          setupBlocksContainer(svgEl);
+        }
+        resetView();
+        
+        toast.textContent = '¡Plano cargado con éxito! 📤';
+        toast.classList.add('visible');
+        setTimeout(() => toast.classList.remove('visible'), 2500);
+      };
+      reader.readAsText(file);
     });
 
     // PRE-DEFINED TEXT TO COLOR PALETTE MAPPING
