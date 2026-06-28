@@ -1322,16 +1322,31 @@
           y: p.y + dy
         }));
         setPathPoints(selectedPoly, nextPoints);
-        renderPolyHandles();
+        
+        // Optimize: Update existing handle positions directly in the DOM instead of recreating them!
+        const handles = handlesGroup.querySelectorAll('circle');
+        nextPoints.forEach((p, idx) => {
+          if (handles[idx]) {
+            handles[idx].setAttribute('cx', p.x);
+            handles[idx].setAttribute('cy', p.y);
+          }
+        });
       } else if (isDraggingVertex && activeVertexIndex !== -1) {
         e.preventDefault();
         const nextPoints = [...polyStartPoints];
-        nextPoints[activeVertexIndex] = {
+        const newPt = {
           x: polyStartPoints[activeVertexIndex].x + dx,
           y: polyStartPoints[activeVertexIndex].y + dy
         };
+        nextPoints[activeVertexIndex] = newPt;
         setPathPoints(selectedPoly, nextPoints);
-        renderPolyHandles();
+        
+        // Optimize: Update only the dragged handle's position directly in the DOM!
+        const handles = handlesGroup.querySelectorAll('circle');
+        if (handles[activeVertexIndex]) {
+          handles[activeVertexIndex].setAttribute('cx', newPt.x);
+          handles[activeVertexIndex].setAttribute('cy', newPt.y);
+        }
       }
     });
 
