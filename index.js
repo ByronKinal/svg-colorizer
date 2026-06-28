@@ -164,7 +164,7 @@ function getColorForText(text) {
   }
   
   // Verde claro - césped/jardines
-  if (t.includes('césped') || t.includes('cesped') || t.includes('jardín') || t.includes('jardin') || t.includes('verde') || t.includes('grama') || t.includes('jardines')) {
+  if (t.includes('césped') || t.includes('cesped') || t.includes('jardín') || t.includes('jardin') || t.includes('verde') || t.includes('grama') || t.includes('jardines') || t.includes('cancha')) {
     return '#90EE90'; // LightGreen
   }
   
@@ -211,6 +211,15 @@ function processSVG(filepath, outpath) {
     'ESCALA INDICADA', 'AREA DE AMBIENTES', 'Y CIRCULACION', 'C.S.C.M', 'RUTAS DE EVACUACIÓN',
     'NIVEL', 'PRIMER', 'SEGUNDO', 'TERCER', 'CUARTO'
   ];
+
+  // Manually add Canva Grass Field mock label in Pass 1 for Nivel 1
+  if (filepath.includes('NIVEL-1-KINAL')) {
+    roomTexts.push({
+      id: 'cancha-grass-field-label',
+      text: 'cancha',
+      pos: { x: 500, y: 600 }
+    });
+  }
 
   let match;
   let inClipPath = false;
@@ -292,6 +301,7 @@ function processSVG(filepath, outpath) {
   let coloredCount = 0;
   let fallbackCount = 0;
   inClipPath = false;
+  let canchaInjected = false;
 
   tagRegex.lastIndex = 0;
   while ((match = tagRegex.exec(content)) !== null) {
@@ -344,6 +354,12 @@ function processSVG(filepath, outpath) {
           attrs['style'] = 'display:none;';
         }
         modifiedTag = rebuildOpeningTag('g', attrs, false);
+      }
+      
+      // Inject synthetic grass field path for Nivel 1 at the beginning of the main group so it acts as background
+      if (!canchaInjected && filepath.includes('NIVEL-1-KINAL') && id.startsWith('g')) {
+        output += '<path id="cancha-grass-field" d="M 3278,1353 H 24500 V 27000 H 13100 L 3278,29500 Z" style="fill:#90EE90;stroke:none;" />';
+        canchaInjected = true;
       }
       
     } else if (tag === '</g>' || tag === '</G>') {
@@ -564,9 +580,9 @@ const server = http.createServer((req, res) => {
 
 const PORT = 3000;
 server.listen(PORT, () => {
-  console.log(`\n=========================================`);
+  console.log('\n=========================================');
   console.log(`Local Map Viewer started successfully!`);
   console.log(`Open your browser and navigate to: http://localhost:${PORT}`);
   console.log(`Press Ctrl+C to stop the server.`);
-  console.log(`=========================================`);
+  console.log('=========================================');
 });
