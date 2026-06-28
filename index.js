@@ -356,9 +356,9 @@ function processSVG(filepath, outpath) {
         modifiedTag = rebuildOpeningTag('g', attrs, false);
       }
       
-      // Inject synthetic grass field path for Nivel 1 at the beginning of the main group so it acts as background
+      // Inject synthetic grass field path INSIDE the main transformed group, right after the group opening tag
       if (!canchaInjected && filepath.includes('NIVEL-1-KINAL') && id.startsWith('g')) {
-        output += '<path id="cancha-grass-field" d="M 3278,1353 H 24500 V 27000 H 13100 L 3278,29500 Z" style="fill:#90EE90;stroke:none;" />';
+        modifiedTag = tag + '<path id="cancha-grass-field" d="M 3278,1353 H 24500 V 27000 H 13100 L 3278,29500 Z" style="fill:#90EE90;stroke:none;" />';
         canchaInjected = true;
       }
       
@@ -464,7 +464,7 @@ function processSVG(filepath, outpath) {
                                       area > 200 && width > 5 && height > 5;
                                       
               if ((isWhiteFill || isNoFillOutline) && center.x < 2850 && width > 2 && height > 2) {
-                // Match closest room text label
+                // Match closest room text label with increased 800 units search radius for Nivel 1
                 let closestText = null;
                 let minDist = Infinity;
                 
@@ -476,7 +476,7 @@ function processSVG(filepath, outpath) {
                   }
                 });
                 
-                if (closestText && minDist < 200) {
+                if (closestText && minDist < 800) {
                   const color = getColorForText(closestText.text);
                   
                   let newStyle = '';
