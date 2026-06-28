@@ -125,22 +125,24 @@
     /* Tool Buttons Group */
     .tool-group {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.5rem;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.4rem;
     }
 
     .tool-btn {
       background: var(--panel-bg);
       border: 1px solid var(--panel-border);
       border-radius: 10px;
-      padding: 0.75rem;
+      padding: 0.75rem 0.25rem;
       color: var(--text-color);
+      font-size: 0.8rem;
       font-weight: 500;
       cursor: pointer;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.25rem;
       transition: all 0.2s ease;
     }
 
@@ -202,7 +204,7 @@
       box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4);
     }
 
-    /* Paint Panel (Hidden when not in paint mode) */
+    /* Paint Panel (Hidden when not in paint/blocks mode) */
     .paint-panel {
       background: rgba(15, 23, 42, 0.6);
       border: 1px solid var(--panel-border);
@@ -350,6 +352,10 @@
       cursor: crosshair;
     }
 
+    .viewer-container.blocks-active {
+      cursor: default;
+    }
+
     .canvas-wrapper {
       position: absolute;
       transform-origin: 0 0;
@@ -379,6 +385,22 @@
       filter: brightness(1.2);
       stroke: #f97316 !important;
       stroke-width: 20px !important;
+    }
+
+    /* Interactive Custom Blocks styling in blocks mode */
+    .viewer-container.blocks-active svg .custom-rect {
+      cursor: move;
+      pointer-events: auto !important;
+    }
+
+    .viewer-container.blocks-active svg .custom-rect:hover {
+      stroke: #f97316 !important;
+      stroke-width: 100px !important;
+    }
+
+    .viewer-container.blocks-active svg .custom-rect.selected {
+      stroke: #38bdf8 !important;
+      stroke-width: 120px !important;
     }
 
     /* Floating Controls */
@@ -551,12 +573,15 @@
           <button class="tool-btn" id="tool-paint" title="Pintar salones y espacios">
             <span>🪣 Pintar</span>
           </button>
+          <button class="tool-btn" id="tool-blocks" title="Agregar y editar bloques de colores libres">
+            <span>➕ Bloques</span>
+          </button>
         </div>
       </div>
 
-      <!-- Paint Palette Options (Shown only in Paint mode) -->
-      <div class="paint-panel" id="paint-panel">
-        <h3>Elegir Color</h3>
+      <!-- Colors Palette Options (Shown in Paint and Blocks modes) -->
+      <div class="paint-panel" id="color-panel">
+        <h3 id="palette-title">Elegir Color</h3>
         <div class="swatches-grid">
           <div class="swatch selected" style="background-color: #FFA500;" data-color="#FFA500" title="Salones (Naranja)"></div>
           <div class="swatch" style="background-color: #1E90FF;" data-color="#1E90FF" title="Baños (Azul)"></div>
@@ -572,6 +597,24 @@
             <input type="color" id="custom-color-input" value="#ff00ff">
           </div>
         </div>
+      </div>
+
+      <!-- Blocks Panel Controls (Shown only in Blocks mode) -->
+      <div class="paint-panel" id="blocks-panel" style="display: none; border-color: #38bdf8;">
+        <h3>Editar Bloques</h3>
+        <button class="action-btn" id="add-rect-btn" style="background: #38bdf8; width: 100%; margin-bottom: 0.5rem;" title="Crear un nuevo rectángulo de color en el centro">
+          <span>➕ Crear Rectángulo</span>
+        </button>
+        <div style="margin: 0.5rem 0;">
+          <label style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+            <span>Opacidad:</span>
+            <strong id="opacity-val">0.7</strong>
+          </label>
+          <input type="range" id="rect-opacity-input" min="0.1" max="1.0" step="0.05" value="0.7" style="width: 100%; cursor: pointer;">
+        </div>
+        <button class="action-btn" id="delete-rect-btn" style="background: #ef4444; width: 100%; margin-top: 0.5rem;" title="Eliminar el bloque seleccionado">
+          <span>🗑️ Eliminar Bloque</span>
+        </button>
       </div>
 
       <!-- Actions -->
@@ -675,16 +718,29 @@
     const levelCards = document.querySelectorAll('.level-card');
     const themeToggleBtn = document.getElementById('theme-toggle');
     
-    // Tools UI
+    // Tools UI Buttons
     const toolPanBtn = document.getElementById('tool-pan');
     const toolPaintBtn = document.getElementById('tool-paint');
-    const paintPanel = document.getElementById('paint-panel');
+    const toolBlocksBtn = document.getElementById('tool-blocks');
+    
+    // Side panels
+    const colorPanel = document.getElementById('color-panel');
+    const paletteTitle = document.getElementById('palette-title');
+    const blocksPanel = document.getElementById('blocks-panel');
+    
     const swatches = document.querySelectorAll('.swatch');
     const customColorInput = document.getElementById('custom-color-input');
     const saveMapBtn = document.getElementById('save-map-btn');
     const autocolorBtn = document.getElementById('autocolor-btn');
     const clearBtn = document.getElementById('clear-btn');
+    
+    // Blocks specific controls
+    const addRectBtn = document.getElementById('add-rect-btn');
+    const deleteRectBtn = document.getElementById('delete-rect-btn');
+    const rectOpacityInput = document.getElementById('rect-opacity-input');
+    const opacityValSpan = document.getElementById('opacity-val');
 
+    // Pan / Zoom view state
     let currentScale = 1;
     let currentX = 0;
     let currentY = 0;
@@ -695,12 +751,28 @@
     let isDarkTheme = false;
     let activeTool = 'pan';
     let activePaintColor = '#FFA500';
+    let activeRectOpacity = 0.7;
     let currentFilename = 'NIVEL-1-KINAL.svg';
+
+    // Blocks manipulation state
+    let selectedRect = null;
+    let resizeHandle = null;
+    
+    let isDraggingRect = false;
+    let isResizingRect = false;
+    
+    let startMouseX = 0;
+    let startMouseY = 0;
+    let rectStartX = 0;
+    let rectStartY = 0;
+    let rectStartWidth = 0;
+    let rectStartHeight = 0;
 
     // Load active SVG
     async function loadSVG(filename) {
       currentFilename = filename;
       loader.classList.add('visible');
+      deselectRect();
       try {
         const response = await fetch(`/api/maps/${filename}`);
         if (!response.ok) throw new Error('Error al cargar plano');
@@ -712,6 +784,9 @@
         if (svgEl) {
           svgEl.style.width = '100%';
           svgEl.style.height = '100%';
+          
+          // Setup custom-color-blocks container and selection circle handles inside SVG
+          setupBlocksContainer(svgEl);
         }
         
         resetView();
@@ -754,53 +829,294 @@
       }
     });
 
-    // Tool switching
+    // Tool switching handlers
     toolPanBtn.addEventListener('click', () => {
       activeTool = 'pan';
+      deselectRect();
       toolPanBtn.classList.add('active');
       toolPaintBtn.classList.remove('active');
-      paintPanel.style.display = 'none';
-      viewer.classList.remove('paint-active');
+      toolBlocksBtn.classList.remove('active');
+      
+      colorPanel.style.display = 'none';
+      blocksPanel.style.display = 'none';
+      
+      viewer.className = 'viewer-container';
     });
 
     toolPaintBtn.addEventListener('click', () => {
       activeTool = 'paint';
+      deselectRect();
       toolPaintBtn.classList.add('active');
       toolPanBtn.classList.remove('active');
-      paintPanel.style.display = 'flex';
-      viewer.classList.add('paint-active');
+      toolBlocksBtn.classList.remove('active');
+      
+      paletteTitle.textContent = "Elegir Color de Pintura";
+      colorPanel.style.display = 'flex';
+      blocksPanel.style.display = 'none';
+      
+      viewer.className = 'viewer-container paint-active';
     });
 
-    // Color Swatches
+    toolBlocksBtn.addEventListener('click', () => {
+      activeTool = 'blocks';
+      toolBlocksBtn.classList.add('active');
+      toolPanBtn.classList.remove('active');
+      toolPaintBtn.classList.remove('active');
+      
+      paletteTitle.textContent = "Color del Rectángulo";
+      colorPanel.style.display = 'flex';
+      blocksPanel.style.display = 'flex';
+      
+      viewer.className = 'viewer-container blocks-active';
+    });
+
+    // Color Swatches Selection
     swatches.forEach(sw => {
       sw.addEventListener('click', () => {
         swatches.forEach(s => s.classList.remove('selected'));
         sw.classList.add('selected');
         activePaintColor = sw.dataset.color;
+        
+        // If a custom block is selected, change its color immediately
+        if (activeTool === 'blocks' && selectedRect) {
+          selectedRect.setAttribute('fill', activePaintColor);
+        }
       });
     });
 
     customColorInput.addEventListener('input', (e) => {
       swatches.forEach(s => s.classList.remove('selected'));
       activePaintColor = e.target.value;
+      
+      // If a custom block is selected, change its color immediately
+      if (activeTool === 'blocks' && selectedRect) {
+        selectedRect.setAttribute('fill', activePaintColor);
+      }
     });
 
-    // Click to paint path in DOM
-    canvas.addEventListener('click', (e) => {
-      if (activeTool !== 'paint') return;
+    // Custom Opacity Slider
+    rectOpacityInput.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      activeRectOpacity = val;
+      opacityValSpan.textContent = val.toFixed(2);
       
-      const path = e.target.closest('path');
-      if (path) {
+      if (selectedRect) {
+        selectedRect.setAttribute('fill-opacity', val);
+      }
+    });
+
+    // Paint bucket click-to-paint on DOM elements
+    canvas.addEventListener('click', (e) => {
+      if (activeTool === 'paint') {
+        const path = e.target.closest('path');
+        if (path) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          let style = path.getAttribute('style') || '';
+          if (style.includes('fill:')) {
+            style = style.replace(/fill:\s*[^;]+/, `fill:${activePaintColor}`);
+          } else {
+            style = style + `;fill:${activePaintColor}`;
+          }
+          path.setAttribute('style', style);
+        }
+      }
+    });
+
+    // Setup blocks container & handles inside SVG structure
+    function setupBlocksContainer(svgEl) {
+      const mainGroup = svgEl.querySelector('g');
+      if (!mainGroup) return;
+
+      // 1. Find or create custom blocks group layer as the first child of the main group so it stays under lines
+      let blockGroup = mainGroup.querySelector('#custom-color-blocks');
+      if (!blockGroup) {
+        blockGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        blockGroup.setAttribute('id', 'custom-color-blocks');
+        mainGroup.insertBefore(blockGroup, mainGroup.firstChild);
+      }
+
+      // Add class and interactability to any existing rects in this group
+      const rects = blockGroup.querySelectorAll('rect');
+      rects.forEach(r => {
+        r.classList.add('custom-rect');
+      });
+
+      // 2. Create the shared single resize handle circle at the bottom of blockGroup
+      let handle = blockGroup.querySelector('#rect-resize-handle');
+      if (!handle) {
+        handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        handle.setAttribute('id', 'rect-resize-handle');
+        handle.setAttribute('r', '250'); // Perfect visible size in raw units
+        handle.setAttribute('fill', '#ffffff');
+        handle.setAttribute('stroke', '#38bdf8');
+        handle.setAttribute('stroke-width', '80');
+        handle.setAttribute('style', 'cursor: se-resize; display: none; pointer-events: auto;');
+        blockGroup.appendChild(handle);
+      }
+      resizeHandle = handle;
+      
+      // Wire handle pointer events
+      handle.addEventListener('pointerdown', (e) => {
+        if (activeTool !== 'blocks' || !selectedRect) return;
         e.preventDefault();
         e.stopPropagation();
         
-        let style = path.getAttribute('style') || '';
-        if (style.includes('fill:')) {
-          style = style.replace(/fill:\s*[^;]+/, `fill:${activePaintColor}`);
+        isResizingRect = true;
+        startMouseX = e.clientX;
+        startMouseY = e.clientY;
+        rectStartWidth = parseFloat(selectedRect.getAttribute('width'));
+        rectStartHeight = parseFloat(selectedRect.getAttribute('height'));
+      });
+    }
+
+    // Select custom rectangle block
+    function selectRect(rect) {
+      deselectRect();
+      selectedRect = rect;
+      selectedRect.classList.add('selected');
+      
+      // Position the resize handle at bottom-right corner
+      const x = parseFloat(selectedRect.getAttribute('x'));
+      const y = parseFloat(selectedRect.getAttribute('y'));
+      const w = parseFloat(selectedRect.getAttribute('width'));
+      const h = parseFloat(selectedRect.getAttribute('height'));
+      
+      resizeHandle.setAttribute('cx', x + w);
+      resizeHandle.setAttribute('cy', y + h);
+      resizeHandle.style.display = 'block';
+      
+      // Update sidebar sliders to match this block's attributes
+      const op = parseFloat(selectedRect.getAttribute('fill-opacity') || '0.7');
+      rectOpacityInput.value = op;
+      opacityValSpan.textContent = op.toFixed(2);
+      
+      // Select appropriate swatch in palette
+      const fill = selectedRect.getAttribute('fill') || '#FFA500';
+      swatches.forEach(s => {
+        if (s.dataset.color.toLowerCase() === fill.toLowerCase()) {
+          s.classList.add('selected');
         } else {
-          style = style + `;fill:${activePaintColor}`;
+          s.classList.remove('selected');
         }
-        path.setAttribute('style', style);
+      });
+    }
+
+    // Deselect rectangle block
+    function deselectRect() {
+      if (selectedRect) {
+        selectedRect.classList.remove('selected');
+        selectedRect = null;
+      }
+      if (resizeHandle) {
+        resizeHandle.style.display = 'none';
+      }
+    }
+
+    // Handle clicks/selections on canvas
+    viewer.addEventListener('pointerdown', (e) => {
+      if (activeTool !== 'blocks') return;
+      
+      const rect = e.target.closest('.custom-rect');
+      if (rect) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        selectRect(rect);
+        
+        isDraggingRect = true;
+        startMouseX = e.clientX;
+        startMouseY = e.clientY;
+        rectStartX = parseFloat(rect.getAttribute('x'));
+        rectStartY = parseFloat(rect.getAttribute('y'));
+      } else if (e.target !== resizeHandle) {
+        // Deselect if clicking outside
+        deselectRect();
+      }
+    });
+
+    // Move/Resize mouse movements
+    viewer.addEventListener('pointermove', (e) => {
+      if (activeTool !== 'blocks' || !selectedRect) return;
+      
+      // Calculate delta in raw SVG/CAD coordinate space
+      // RawScale = screenScale * 0.04 (due to AutoCAD scaling matrix)
+      const rawScale = currentScale * 0.04;
+      const dx = (e.clientX - startMouseX) / rawScale;
+      const dy = (e.clientY - startMouseY) / rawScale;
+      
+      if (isDraggingRect) {
+        e.preventDefault();
+        const nextX = rectStartX + dx;
+        const nextY = rectStartY + dy;
+        selectedRect.setAttribute('x', nextX);
+        selectedRect.setAttribute('y', nextY);
+        
+        // Update handle position to track drag
+        const w = parseFloat(selectedRect.getAttribute('width'));
+        const h = parseFloat(selectedRect.getAttribute('height'));
+        resizeHandle.setAttribute('cx', nextX + w);
+        resizeHandle.setAttribute('cy', nextY + h);
+      } else if (isResizingRect) {
+        e.preventDefault();
+        const nextW = Math.max(500, rectStartWidth + dx); // min width 500 raw units
+        const nextH = Math.max(500, rectStartHeight + dy); // min height 500 raw units
+        selectedRect.setAttribute('width', nextW);
+        selectedRect.setAttribute('height', nextH);
+        
+        // Update handle position to track resize
+        const x = parseFloat(selectedRect.getAttribute('x'));
+        const y = parseFloat(selectedRect.getAttribute('y'));
+        resizeHandle.setAttribute('cx', x + nextW);
+        resizeHandle.setAttribute('cy', y + nextH);
+      }
+    });
+
+    window.addEventListener('pointerup', () => {
+      isDraggingRect = false;
+      isResizingRect = false;
+    });
+
+    // Create a new rectangle block in the center of the viewport
+    addRectBtn.addEventListener('click', () => {
+      const svgEl = canvas.querySelector('svg');
+      if (!svgEl) return;
+      
+      const blockGroup = svgEl.querySelector('#custom-color-blocks');
+      if (!blockGroup) return;
+      
+      // Determine center of current viewport in raw coordinate space
+      const rawScale = currentScale * 0.04;
+      const rawCenterX = (viewer.clientWidth / 2 - currentX) / rawScale;
+      const rawCenterY = (viewer.clientHeight / 2 - currentY) / rawScale;
+      
+      // Standard default rectangle size (roughly 240x160 px on screen at zoom 1)
+      const rectW = 6000;
+      const rectH = 4000;
+      
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('class', 'custom-rect');
+      rect.setAttribute('x', rawCenterX - rectW / 2);
+      rect.setAttribute('y', rawCenterY - rectH / 2);
+      rect.setAttribute('width', rectW);
+      rect.setAttribute('height', rectH);
+      rect.setAttribute('fill', activePaintColor);
+      rect.setAttribute('fill-opacity', activeRectOpacity);
+      rect.setAttribute('style', 'stroke:none;');
+      
+      // Insert block before the resize handle so handle remains on top
+      blockGroup.insertBefore(rect, resizeHandle);
+      
+      // Automatically select the newly created rectangle
+      selectRect(rect);
+    });
+
+    // Delete selected block
+    deleteRectBtn.addEventListener('click', () => {
+      if (selectedRect) {
+        selectedRect.remove();
+        deselectRect();
       }
     });
 
@@ -810,6 +1126,8 @@
       if (!svgEl) return;
       
       loader.classList.add('visible');
+      deselectRect(); // Hide handles before saving
+      
       try {
         const response = await fetch('/api/save-map', {
           method: 'POST',
@@ -879,9 +1197,9 @@
       if (!svgEl) return;
       
       loader.classList.add('visible');
+      deselectRect();
       setTimeout(() => {
         try {
-          // 1. Find all text nodes and map their center coordinates
           const textElements = svgEl.querySelectorAll('text');
           const texts = Array.from(textElements).map(t => {
             const bbox = t.getBBox();
@@ -892,13 +1210,10 @@
             };
           }).filter(t => t.text && !isLayoutText(t.text));
 
-          // 2. Loop through all paths and colorize floor patterns/outlines based on proximity
           const paths = svgEl.querySelectorAll('path');
-          let coloredCount = 0;
           
           paths.forEach(path => {
             const id = path.getAttribute('id') || '';
-            // Skip cancha background path if it's already green, or we can color it
             if (id === 'cancha-grass-field') {
               path.setAttribute('style', 'fill:#90EE90;stroke:none;');
               return;
@@ -947,7 +1262,6 @@
                   newStyle = style + `;fill:${color}`;
                 }
                 path.setAttribute('style', newStyle);
-                coloredCount++;
               }
             }
           });
@@ -970,13 +1284,14 @@
       if (!svgEl) return;
       
       loader.classList.add('visible');
+      deselectRect();
       setTimeout(() => {
         try {
           const paths = svgEl.querySelectorAll('path');
           paths.forEach(path => {
             const id = path.getAttribute('id') || '';
             if (id === 'cancha-grass-field') {
-              path.setAttribute('style', 'fill:#ffffff;stroke:#000000;stroke-width:24;');
+              path.setAttribute('style', 'fill:#ffffff;stroke:none;');
               return;
             }
             
@@ -986,7 +1301,6 @@
             
             let style = path.getAttribute('style') || '';
             if (style.includes('fill:')) {
-              // Revert back to white fill
               style = style.replace(/fill:\s*[^;]+/, 'fill:#ffffff');
               path.setAttribute('style', style);
             }
@@ -1004,10 +1318,12 @@
       }, 50);
     });
 
-    // Pan & Drag
+    // Pan & Drag viewer movement
     viewer.addEventListener('mousedown', (e) => {
       if (activeTool === 'paint' && e.target.closest('path')) return;
-      if (e.target.closest('.controls') || e.target.closest('.legend-panel')) return;
+      if (activeTool === 'blocks' && e.target.closest('.custom-rect')) return;
+      if (activeTool === 'blocks' && e.target === resizeHandle) return;
+      if (e.target.closest('.controls') || e.target.closest('.legend-panel') || e.target.closest('.sidebar')) return;
       
       isDragging = true;
       startX = e.clientX - currentX;
@@ -1047,7 +1363,7 @@
       updateTransform();
     }, { passive: false });
 
-    // Buttons zoom
+    // Zoom Buttons
     document.getElementById('zoom-in').addEventListener('click', () => {
       currentScale = Math.min(currentScale * 1.2, 5);
       updateTransform();
