@@ -155,9 +155,9 @@ function processSVG(filepath, outpath) {
   let content = fs.readFileSync(filepath, 'utf8');
 
   // Inject synthetic grass field path for Nivel 1 at the root level right after </defs>
-  // Changed top coordinate from Y=1353 to Y=13500 to align perfectly with cancha bounds!
+  // Changed stroke to 'none' so that the duplicate outline rectangle is completely invisible!
   if (filepath.includes('NIVEL-1-KINAL')) {
-    content = content.replace('</defs>', '</defs><path id="cancha-grass-field" transform="matrix(0.04, 0, 0, 0.04, 0, 0)" d="M 3278,13500 H 24500 V 27000 H 13100 L 3278,29500 Z" style="fill:#ffffff;stroke:#000000;stroke-width:24;" />');
+    content = content.replace('</defs>', '</defs><path id="cancha-grass-field" transform="matrix(0.04, 0, 0, 0.04, 0, 0)" d="M 3278,13500 H 24500 V 27000 H 13100 L 3278,29500 Z" style="fill:#ffffff;stroke:none;" />');
   }
 
   const tagRegex = /(<g[^>]*>|<\/g>|<text[^>]*>[\s\S]*?<\/text>|<path[^>]*>|<clipPath[^>]*>|<\/clipPath>)/gi;
