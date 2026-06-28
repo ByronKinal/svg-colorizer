@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kinal Map Explorer & Editor</title>
+  <!-- Google Fonts: Outfit & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --panel-bg: rgba(30, 41, 59, 0.7);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --text-color: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-color: #f97316; /* Orange */
+      --accent-glow: rgba(249, 115, 22, 0.4);
+      --font-title: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      
+      /* Canvas Background */
+      --canvas-bg: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--panel-border);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    header h1 {
+      font-family: var(--font-title);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, #f97316 0%, #ffedd5 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header h1::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 20px;
+      background: var(--accent-color);
+      border-radius: 3px;
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    /* Main Layout */
+    .app-container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Sidebar - Level Selector */
+    .sidebar {
+      width: 320px;
+      background: rgba(15, 23, 42, 0.4);
+      border-right: 1px solid var(--panel-border);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      overflow-y: auto;
+      z-index: 5;
+    }
+
+    .sidebar h2 {
+      font-family: var(--font-title);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 0.25rem;
+    }
+
+    .sidebar-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    /* Tool Buttons Group */
+    .tool-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .tool-btn {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 0.75rem;
+      color: var(--text-color);
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .tool-btn:hover {
+      border-color: rgba(249, 115, 22, 0.4);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .tool-btn.active {
+      background: var(--accent-color);
+      border-color: var(--accent-color);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    /* Paint Panel (Hidden when not in paint mode) */
+    .paint-panel {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 1rem;
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .paint-panel h3 {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* Swatches Grid */
+    .swatches-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+    }
+
+    .swatch {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s ease;
+      position: relative;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    .swatch:hover {
+      transform: scale(1.1);
+    }
+
+    .swatch.selected {
+      border-color: #fff;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+
+    .custom-swatch-picker {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      position: relative;
+      background: linear-gradient(135deg, red, orange, yellow, green, blue, purple);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .custom-swatch-picker input[type="color"] {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* Save Button */
+    .save-btn {
+      background: #10b981; /* Emerald 500 */
+      border: 1px solid #10b981;
+      color: #fff;
+      font-weight: 600;
+      padding: 0.85rem;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+    }
+
+    .save-btn:hover {
+      background: #059669;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4);
+    }
+
+    /* Level Selector Cards */
+    .level-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .level-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: transparent;
+      transition: background 0.3s ease;
+    }
+
+    .level-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(249, 115, 22, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .level-card.active {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 15px var(--accent-glow);
+      background: rgba(30, 41, 59, 0.9);
+    }
+
+    .level-card.active::before {
+      background: var(--accent-color);
+    }
+
+    .level-title {
+      font-family: var(--font-title);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .level-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Viewer Container */
+    .viewer-container {
+      flex: 1;
+      position: relative;
+      background-color: #080d1a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      cursor: grab;
+    }
+
+    .viewer-container:active {
+      cursor: grabbing;
+    }
+
+    /* Grab override when paint tool is active */
+    .viewer-container.paint-active {
+      cursor: crosshair;
+    }
+
+    .canvas-wrapper {
+      position: absolute;
+      transform-origin: 0 0;
+      user-select: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: var(--canvas-bg);
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      transition: background-color 0.3s ease;
+    }
+
+    .canvas-wrapper svg {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 95vw;
+      max-height: 85vh;
+    }
+
+    /* Highlight path on hover when in paint mode */
+    .viewer-container.paint-active svg path {
+      pointer-events: auto;
+    }
+    
+    .viewer-container.paint-active svg path:hover {
+      filter: brightness(1.2);
+      stroke: #f97316 !important;
+      stroke-width: 20px !important; /* Thick outline so they see what they click */
+    }
+
+    /* Floating Controls */
+    .controls {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 10;
+    }
+
+    .control-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      color: var(--text-color);
+      font-size: 1.25rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .control-btn:hover {
+      background: var(--accent-color);
+      border-color: var(--accent-color);
+      transform: scale(1.05);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    /* Alert toast */
+    .toast {
+      position: absolute;
+      top: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: #10b981;
+      color: white;
+      padding: 0.75rem 2rem;
+      border-radius: 10px;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+      z-index: 30;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Color Legend */
+    .legend-panel {
+      position: absolute;
+      bottom: 1.5rem;
+      left: 350px;
+      right: 1.5rem;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 1rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      gap: 1rem;
+      z-index: 10;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .color-box {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Loading overlay */
+    .loader {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .loader.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(249, 115, 22, 0.1);
+      border-radius: 50%;
+      border-top-color: var(--accent-color);
+      animation: spin 1s ease-in-out infinite;
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .app-container {
+        flex-direction: column-reverse;
+      }
+      .sidebar {
+        width: 100%;
+        height: 250px;
+        border-right: none;
+        border-top: 1px solid var(--panel-border);
+      }
+      .legend-panel {
+        left: 1.5rem;
+        bottom: 270px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <h1>Kinal Map Explorer & Editor</h1>
+      <div class="subtitle">Explorador Interactivo de Niveles de la Institución</div>
+    </div>
+  </header>
+
+  <div class="app-container">
+    <!-- Sidebar tool & level selectors -->
+    <div class="sidebar">
+      <!-- Mode/Tool Selector -->
+      <div class="sidebar-section">
+        <h2>Herramientas</h2>
+        <div class="tool-group">
+          <button class="tool-btn active" id="tool-pan" title="Mover la cámara">
+            <span>✋ Mover</span>
+          </button>
+          <button class="tool-btn" id="tool-paint" title="Pintar salones y espacios">
+            <span>🪣 Pintar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Paint Palette Options (Shown only in Paint mode) -->
+      <div class="paint-panel" id="paint-panel">
+        <h3>Elegir Color</h3>
+        <div class="swatches-grid">
+          <div class="swatch selected" style="background-color: #FFA500;" data-color="#FFA500" title="Salones (Naranja)"></div>
+          <div class="swatch" style="background-color: #1E90FF;" data-color="#1E90FF" title="Baños (Azul)"></div>
+          <div class="swatch" style="background-color: #FF4500;" data-color="#FF4500" title="Conexiones/Gradas (Rojo)"></div>
+          <div class="swatch" style="background-color: #D3D3D3;" data-color="#D3D3D3" title="Concreto/Pasillos (Gris)"></div>
+          <div class="swatch" style="background-color: #90EE90;" data-color="#90EE90" title="Césped/Jardines (Verde Claro)"></div>
+          <div class="swatch" style="background-color: #228B22;" data-color="#228B22" title="Plantas/Maceteros (Verde Oscuro)"></div>
+          <div class="swatch" style="background-color: #FFDAB9;" data-color="#FFDAB9" title="Suelo/Patio (Piel)"></div>
+          
+          <!-- Custom Color Picker -->
+          <div class="custom-swatch-picker" title="Color Personalizado">
+            <span>🎨</span>
+            <input type="color" id="custom-color-input" value="#ff00ff">
+          </div>
+        </div>
+      </div>
+
+      <!-- Save map button -->
+      <button class="save-btn" id="save-map-btn" title="Guardar cambios del plano en tu disco">
+        <span>💾 Guardar Plano</span>
+      </button>
+
+      <!-- Levels selection -->
+      <div class="sidebar-section">
+        <h2>Niveles</h2>
+        <div class="level-card active" data-file="NIVEL-1-KINAL.svg" data-name="Nivel 1">
+          <span class="level-title">Primer Nivel</span>
+          <span class="level-desc">Ingreso principal, canchas deportivas, enfermería, auditorio y talleres básicos.</span>
+        </div>
+        <div class="level-card" data-file="NIVEL 2 KINAL.svg" data-name="Nivel 2">
+          <span class="level-title">Segundo Nivel</span>
+          <span class="level-desc">Aulas del Edificio C, Edificio I, salón de preceptores y talleres de electricidad.</span>
+        </div>
+        <div class="level-card" data-file="NIVEL 3 KINAL.svg" data-name="Nivel 3">
+          <span class="level-title">Tercer Nivel</span>
+          <span class="level-desc">Aulas C-30 a C-39, laboratorios H y G, sanitarios y áreas de lockers.</span>
+        </div>
+        <div class="level-card" data-file="NIVEL 4 KINAL.svg" data-name="Nivel 4">
+          <span class="level-title">Cuarto Nivel</span>
+          <span class="level-desc">Planta superior de escaleras y acceso a los niveles de azotea.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Viewer Canvas -->
+    <div class="viewer-container" id="viewer">
+      <div class="loader" id="loader">
+        <div class="spinner"></div>
+      </div>
+      <div class="toast" id="toast">¡Plano guardado con éxito! 💾</div>
+      
+      <div class="canvas-wrapper" id="canvas">
+        <!-- SVG content will be injected here -->
+      </div>
+
+      <!-- Controls -->
+      <div class="controls">
+        <button class="control-btn" id="zoom-in" title="Acercar">+</button>
+        <button class="control-btn" id="zoom-out" title="Alejar">-</button>
+        <button class="control-btn" id="zoom-reset" title="Restaurar Vista">⟲</button>
+        <button class="control-btn" id="theme-toggle" title="Cambiar Fondo (Claro / Oscuro)">🌓</button>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend-panel">
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #FFA500;"></div>
+          <span>Salones / Aulas</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #1E90FF;"></div>
+          <span>Baños (S.S)</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #FF4500;"></div>
+          <span>Escaleras / Rampas</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #D3D3D3;"></div>
+          <span>Concreto / Pasillos</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #90EE90;"></div>
+          <span>Grama / Jardines</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #228B22;"></div>
+          <span>Plantas / Maceteras</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #FFDAB9;"></div>
+          <span>Suelo General / Patios</span>
+        </div>
+        <div class="legend-item">
+          <div class="color-box" style="background-color: #FFE4C4;"></div>
+          <span>Otros Ambientes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const viewer = document.getElementById('viewer');
+    const canvas = document.getElementById('canvas');
+    const loader = document.getElementById('loader');
+    const toast = document.getElementById('toast');
+    const levelCards = document.querySelectorAll('.level-card');
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    
+    // Tools UI
+    const toolPanBtn = document.getElementById('tool-pan');
+    const toolPaintBtn = document.getElementById('tool-paint');
+    const paintPanel = document.getElementById('paint-panel');
+    const swatches = document.querySelectorAll('.swatch');
+    const customColorInput = document.getElementById('custom-color-input');
+    const saveMapBtn = document.getElementById('save-map-btn');
+
+    let currentScale = 1;
+    let currentX = 0;
+    let currentY = 0;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    
+    let isDarkTheme = false;
+    let activeTool = 'pan'; // 'pan' or 'paint'
+    let activePaintColor = '#FFA500';
+    let currentFilename = 'NIVEL-1-KINAL.svg';
+
+    // Load active SVG
+    async function loadSVG(filename) {
+      currentFilename = filename;
+      loader.classList.add('visible');
+      try {
+        const response = await fetch(`/api/maps/${filename}`);
+        if (!response.ok) throw new Error('Error al cargar plano');
+        const svgText = await response.text();
+        
+        // Inject SVG
+        canvas.innerHTML = svgText;
+        
+        // Remove style constraints from svg tag
+        const svgEl = canvas.querySelector('svg');
+        if (svgEl) {
+          svgEl.style.width = '100%';
+          svgEl.style.height = '100%';
+        }
+        
+        resetView();
+      } catch (err) {
+        console.error(err);
+        canvas.innerHTML = `<div style="color: #ef4444; font-weight: 500;">No se pudo cargar el plano. Asegúrate de ejecutar el servidor.</div>`;
+      } finally {
+        loader.classList.remove('visible');
+      }
+    }
+
+    // Reset translation and zoom
+    function resetView() {
+      currentScale = 0.35;
+      currentX = (viewer.clientWidth - canvas.clientWidth * currentScale) / 2;
+      currentY = (viewer.clientHeight - canvas.clientHeight * currentScale) / 2;
+      updateTransform();
+    }
+
+    function updateTransform() {
+      canvas.style.transform = `translate(${currentX}px, ${currentY}px) scale(${currentScale})`;
+    }
+
+    // Level selector click handler
+    levelCards.forEach(card => {
+      card.addEventListener('click', () => {
+        levelCards.forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        loadSVG(card.dataset.file);
+      });
+    });
+
+    // Theme Toggle Handler
+    themeToggleBtn.addEventListener('click', () => {
+      isDarkTheme = !isDarkTheme;
+      if (isDarkTheme) {
+        document.documentElement.style.setProperty('--canvas-bg', '#111c3a');
+      } else {
+        document.documentElement.style.setProperty('--canvas-bg', '#ffffff');
+      }
+    });
+
+    // Tool switching logic
+    toolPanBtn.addEventListener('click', () => {
+      activeTool = 'pan';
+      toolPanBtn.classList.add('active');
+      toolPaintBtn.classList.remove('active');
+      paintPanel.style.display = 'none';
+      viewer.classList.remove('paint-active');
+    });
+
+    toolPaintBtn.addEventListener('click', () => {
+      activeTool = 'paint';
+      toolPaintBtn.classList.add('active');
+      toolPanBtn.classList.remove('active');
+      paintPanel.style.display = 'flex';
+      viewer.classList.add('paint-active');
+    });
+
+    // Preset color swatches handler
+    swatches.forEach(sw => {
+      sw.addEventListener('click', () => {
+        swatches.forEach(s => s.classList.remove('selected'));
+        sw.classList.add('selected');
+        activePaintColor = sw.dataset.color;
+      });
+    });
+
+    // Custom color picker handler
+    customColorInput.addEventListener('input', (e) => {
+      swatches.forEach(s => s.classList.remove('selected'));
+      activePaintColor = e.target.value;
+    });
+
+    // Click to PAINT SVG element
+    canvas.addEventListener('click', (e) => {
+      if (activeTool !== 'paint') return;
+      
+      const path = e.target.closest('path');
+      if (path) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        let style = path.getAttribute('style') || '';
+        
+        // Paint path fill
+        if (style.includes('fill:')) {
+          style = style.replace(/fill:\s*[^;]+/, `fill:${activePaintColor}`);
+        } else {
+          style = style + `;fill:${activePaintColor}`;
+        }
+        
+        path.setAttribute('style', style);
+      }
+    });
+
+    // Save Map POST Request
+    saveMapBtn.addEventListener('click', async () => {
+      const svgEl = canvas.querySelector('svg');
+      if (!svgEl) return;
+      
+      loader.classList.add('visible');
+      try {
+        const response = await fetch('/api/save-map', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            filename: currentFilename,
+            svg: svgEl.outerHTML
+          })
+        });
+        
+        if (!response.ok) throw new Error('Error al guardar archivo');
+        
+        // Show success toast
+        toast.classList.add('visible');
+        setTimeout(() => toast.classList.remove('visible'), 3000);
+      } catch (err) {
+        console.error(err);
+        alert('Error al guardar el plano: ' + err.message);
+      } finally {
+        loader.classList.remove('visible');
+      }
+    });
+
+    // Pan & Drag Handlers
+    viewer.addEventListener('mousedown', (e) => {
+      // Disallow drag pan on shape click if in paint mode
+      if (activeTool === 'paint' && e.target.closest('path')) return;
+      if (e.target.closest('.controls') || e.target.closest('.legend-panel')) return;
+      
+      isDragging = true;
+      startX = e.clientX - currentX;
+      startY = e.clientY - currentY;
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    viewer.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      currentX = e.clientX - startX;
+      currentY = e.clientY - startY;
+      updateTransform();
+    });
+
+    // Wheel Zoom Handler
+    viewer.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomFactor = 1.1;
+      const mouseX = e.clientX - viewer.getBoundingClientRect().left;
+      const mouseY = e.clientY - viewer.getBoundingClientRect().top;
+
+      const cx = (mouseX - currentX) / currentScale;
+      const cy = (mouseY - currentY) / currentScale;
+
+      if (e.deltaY < 0) {
+        currentScale = Math.min(currentScale * zoomFactor, 5);
+      } else {
+        currentScale = Math.max(currentScale / zoomFactor, 0.05);
+      }
+
+      currentX = mouseX - cx * currentScale;
+      currentY = mouseY - cy * currentScale;
+      
+      updateTransform();
+    }, { passive: false });
+
+    // Buttons zoom handlers
+    document.getElementById('zoom-in').addEventListener('click', () => {
+      currentScale = Math.min(currentScale * 1.2, 5);
+      updateTransform();
+    });
+
+    document.getElementById('zoom-out').addEventListener('click', () => {
+      currentScale = Math.max(currentScale / 1.2, 0.05);
+      updateTransform();
+    });
+
+    document.getElementById('zoom-reset').addEventListener('click', () => {
+      resetView();
+    });
+
+    // Initial Load
+    window.addEventListener('DOMContentLoaded', () => {
+      document.documentElement.style.setProperty('--canvas-bg', '#ffffff');
+      loadSVG('NIVEL-1-KINAL.svg');
+    });
+  </script>
+</body>
+</html>

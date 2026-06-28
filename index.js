@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 
 // 1. Attribute parser for SVG tags
 function parseAttributes(tagStr) {
@@ -192,13 +193,11 @@ function getColorForText(text) {
   return '#FFE4C4'; // Fallback Bisque
 }
 
-// 8. Rebuilding sequential SVG parser with clipPath safety
+// 8. Rebuilding sequential SVG parser with clipPath safety & white-fills colorization
 function processSVG(filepath, outpath) {
-  console.log(`\n=========================================`);
   console.log(`Processing SVG: ${path.basename(filepath)}`);
   const content = fs.readFileSync(filepath, 'utf8');
 
-  // Tag Regex includes clipPath boundaries to ensure they remain unmodified
   const tagRegex = /(<g[^>]*>|<\/g>|<text[^>]*>[\s\S]*?<\/text>|<path[^>]*>|<clipPath[^>]*>|<\/clipPath>)/gi;
   
   // --- PASS 1: Collect room texts and their absolute coordinates ---
@@ -209,7 +208,8 @@ function processSVG(filepath, outpath) {
     'PLANTA', 'ESCALA', 'CONSTRUYE', 'PROPIETARIO', 'EJECUTOR', 'CONTENIDO', 
     'PROYECTO', 'DISEÑO', 'DIBUJO', 'FECHA', 'MAYO', 'TIMBRE', 'HOJA', 
     'FIRMA', 'OBSERVACIONES', 'MARGEN', 'CAJETIN', 'KINAL', 'FIRMA Y SELLO', 
-    'ESCALA INDICADA', 'AREA DE AMBIENTES', 'Y CIRCULACION', 'C.S.C.M', 'RUTAS DE EVACUACIÓN'
+    'ESCALA INDICADA', 'AREA DE AMBIENTES', 'Y CIRCULACION', 'C.S.C.M', 'RUTAS DE EVACUACIÓN',
+    'NIVEL', 'PRIMER', 'SEGUNDO', 'TERCER', 'CUARTO'
   ];
 
   let match;
@@ -315,7 +315,7 @@ function processSVG(filepath, outpath) {
     }
     
     if (inClipPath) {
-      output += tag; // Never touch elements inside clipPaths
+      output += tag;
       continue;
     }
     
@@ -417,40 +417,71 @@ function processSVG(filepath, outpath) {
               attrs['style'] = 'display:none;';
             }
             modifiedTag = rebuildOpeningTag('path', attrs, isSelfClosing);
-          } else if (area > 200 && width > 5 && height > 5 && center.x < 2850) {
-            // Match closest room text label
-            let closestText = null;
-            let minDist = Infinity;
-            
-            roomTexts.forEach(rt => {
-              const dist = Math.hypot(center.x - rt.pos.x, center.y - rt.pos.y);
-              if (dist < minDist) {
-                minDist = dist;
-                closestText = rt;
-              }
-            });
-            
-            let color = '#FFE4C4'; // Fallback Bisque
-            if (closestText && minDist < 200) {
-              color = getColorForText(closestText.text);
-              coloredCount++;
-            } else {
-              fallbackCount++;
-            }
-            
-            let newStyle = '';
-            if (attrs['style']) {
-              const style = attrs['style'];
-              if (style.includes('fill:')) {
-                newStyle = style.replace(/fill:\s*[^;]+/, `fill:${color}`);
+          } else {
+            // Check if it is a level underline path
+            const isLevelUnderline = height === 0 && 
+                                     Math.abs(width - 344.5) < 5 && 
+                                     (center.y > 1700 && center.y < 1900) &&
+                                     (center.x > 1400 && center.x < 1800);
+                                     
+            if (isLevelUnderline) {
+              if (attrs['style']) {
+                attrs['style'] = attrs['style'] + ';display:none;';
               } else {
-                newStyle = style + `;fill:${color}`;
+                attrs['style'] = 'display:none;';
               }
+              modifiedTag = rebuildOpeningTag('path', attrs, isSelfClosing);
             } else {
-              newStyle = `fill:${color}`;
+              const style = attrs['style'] || '';
+              const fillAttr = attrs['fill'] || '';
+              
+              const isWhiteFill = fillAttr.toLowerCase() === '#ffffff' || 
+                                  fillAttr.toLowerCase() === '#fff' || 
+                                  fillAttr.toLowerCase() === 'white' ||
+                                  style.toLowerCase().includes('fill:#ffffff') ||
+                                  style.toLowerCase().includes('fill:#fff') ||
+                                  style.toLowerCase().includes('fill:white') ||
+                                  (!style.includes('fill:') && !attrs['fill']);
+                                  
+              const isNoFillOutline = style.toLowerCase().includes('fill:none') && 
+                                      style.toLowerCase().includes('stroke:#000000') &&
+                                      area > 200 && width > 5 && height > 5;
+                                      
+              if ((isWhiteFill || isNoFillOutline) && center.x < 2850 && width > 2 && height > 2) {
+                // Match closest room text label
+                let closestText = null;
+                let minDist = Infinity;
+                
+                roomTexts.forEach(rt => {
+                  const dist = Math.hypot(center.x - rt.pos.x, center.y - rt.pos.y);
+                  if (dist < minDist) {
+                    minDist = dist;
+                    closestText = rt;
+                  }
+                });
+                
+                if (closestText && minDist < 200) {
+                  const color = getColorForText(closestText.text);
+                  
+                  let newStyle = '';
+                  if (attrs['style']) {
+                    const style = attrs['style'];
+                    if (style.includes('fill:')) {
+                      newStyle = style.replace(/fill:\s*[^;]+/, `fill:${color}`);
+                    } else {
+                      newStyle = style + `;fill:${color}`;
+                    }
+                  } else {
+                    newStyle = `fill:${color}`;
+                  }
+                  attrs['style'] = newStyle;
+                  modifiedTag = rebuildOpeningTag('path', attrs, isSelfClosing);
+                  coloredCount++;
+                } else {
+                  fallbackCount++;
+                }
+              }
             }
-            attrs['style'] = newStyle;
-            modifiedTag = rebuildOpeningTag('path', attrs, isSelfClosing);
           }
         }
       }
@@ -464,10 +495,9 @@ function processSVG(filepath, outpath) {
   
   console.log(`Colorized: ${coloredCount} room paths, ${fallbackCount} fallback paths.`);
   fs.writeFileSync(outpath, output, 'utf8');
-  console.log(`Successfully saved colored SVG to: ${outpath}`);
 }
 
-// 9. Run the script on the target Mapas directory
+// 9. Run colorization on all SVG files
 const mapsDir = 'C:\\Users\\PC\\Pictures\\Mapas';
 const outputDir = path.join(mapsDir, 'Coloreados');
 
@@ -481,6 +511,7 @@ if (!fs.existsSync(outputDir)) {
   console.log(`Created output directory: ${outputDir}`);
 }
 
+console.log(`Colorizing maps...`);
 const files = fs.readdirSync(mapsDir).filter(f => f.toLowerCase().endsWith('.svg'));
 files.forEach(file => {
   const filepath = path.join(mapsDir, file);
@@ -488,4 +519,54 @@ files.forEach(file => {
   processSVG(filepath, outpath);
 });
 
-console.log('\nAll SVG files processed successfully!');
+console.log('All SVG files processed successfully!');
+
+// 10. Start interactive local Web Server
+const server = http.createServer((req, res) => {
+  const url = req.url;
+  
+  if (url === '/' || url === '/index.html') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(fs.readFileSync(path.join(__dirname, 'index.html')));
+  } else if (url === '/api/save-map' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const payload = JSON.parse(body);
+        const filename = payload.filename;
+        const svgContent = payload.svg;
+        const filepath = path.join(outputDir, filename);
+        fs.writeFileSync(filepath, svgContent, 'utf8');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        console.error('Error saving map:', err);
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end(err.message);
+      }
+    });
+  } else if (url.startsWith('/api/maps/')) {
+    const filename = decodeURIComponent(url.substring(10));
+    const filepath = path.join(outputDir, filename);
+    if (fs.existsSync(filepath)) {
+      res.writeHead(200, { 'Content-Type': 'image/svg+xml; charset=utf-8' });
+      res.end(fs.readFileSync(filepath));
+    } else {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Not Found');
+    }
+  } else {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not Found');
+  }
+});
+
+const PORT = 3000;
+server.listen(PORT, () => {
+  console.log(`\n=========================================`);
+  console.log(`Local Map Viewer started successfully!`);
+  console.log(`Open your browser and navigate to: http://localhost:${PORT}`);
+  console.log(`Press Ctrl+C to stop the server.`);
+  console.log(`=========================================`);
+});
