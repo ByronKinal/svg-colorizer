@@ -1,7 +1,28 @@
 const fs = require('fs');
 const path = require('path');
 
-// 1. Path Parser to extract coordinates and compute bounding box
+// 1. Attribute parser for SVG tags
+function parseAttributes(tagStr) {
+  const attrRegex = /([a-z0-9:-]+)\s*=\s*(['"])([\s\S]*?)\2/gi;
+  const attrs = {};
+  let match;
+  while ((match = attrRegex.exec(tagStr)) !== null) {
+    attrs[match[1]] = match[3];
+  }
+  return attrs;
+}
+
+// 2. Attribute formatter / Tag rebuilder
+function rebuildOpeningTag(tagName, attrs, isSelfClosing) {
+  let tagStr = `<${tagName}`;
+  for (const [key, val] of Object.entries(attrs)) {
+    tagStr += ` ${key}="${val}"`;
+  }
+  tagStr += isSelfClosing ? ' />' : '>';
+  return tagStr;
+}
+
+// 3. Path Parser to extract coordinates and compute bounding box
 function parseSvgPath(d) {
   const tokens = d.match(/[a-df-zXZ]|-?\d+(\.\d+)?/gi) || [];
   const points = [];
@@ -87,7 +108,7 @@ function parseSvgPath(d) {
   return points;
 }
 
-// 2. Matrix Parser
+// 4. Matrix Parser
 function parseMatrix(transformStr) {
   if (!transformStr || transformStr === 'none') {
     return [1, 0, 0, 1, 0, 0];
@@ -104,7 +125,7 @@ function parseMatrix(transformStr) {
   return [1, 0, 0, 1, 0, 0];
 }
 
-// 3. Transform point
+// 5. Transform point
 function transformPoint(pt, matrix) {
   const [a, b, c, d, e, f] = matrix;
   return {
@@ -113,7 +134,7 @@ function transformPoint(pt, matrix) {
   };
 }
 
-// 4. Matrix Multiplication
+// 6. Matrix Multiplication
 function multiplyMatrices(A, B) {
   const [a1, b1, c1, d1, e1, f1] = A;
   const [a2, b2, c2, d2, e2, f2] = B;
@@ -127,7 +148,7 @@ function multiplyMatrices(A, B) {
   ];
 }
 
-// 5. Room text to palette color mapping
+// 7. Room text to palette color mapping
 function getColorForText(text) {
   const t = text.toLowerCase().trim();
   
@@ -171,13 +192,12 @@ function getColorForText(text) {
   return '#FFE4C4'; // Fallback Bisque
 }
 
-// 6. Two-pass SVG processing function
+// 8. Rebuilding sequential SVG parser
 function processSVG(filepath, outpath) {
   console.log(`\n=========================================`);
   console.log(`Processing SVG: ${path.basename(filepath)}`);
   const content = fs.readFileSync(filepath, 'utf8');
 
-  // Regex to scan tag by tag: groups, paths, texts
   const tagRegex = /(<g[^>]*>|<\/g>|<text[^>]*>[\s\S]*?<\/text>|<path[^>]*>)/gi;
   
   // --- PASS 1: Collect room texts and their absolute coordinates ---
@@ -272,32 +292,30 @@ function processSVG(filepath, outpath) {
     let modifiedTag = tag;
     
     if (tag.startsWith('<g') || tag.startsWith('<G')) {
-      const transformMatch = tag.match(/\btransform="([^"]+)"/i);
+      const attrs = parseAttributes(tag);
       const parentM = transformStack[transformStack.length - 1];
-      if (transformMatch) {
-        const localM = parseMatrix(transformMatch[1]);
+      if (attrs['transform']) {
+        const localM = parseMatrix(attrs['transform']);
         const combinedM = multiplyMatrices(parentM, localM);
         transformStack.push(combinedM);
       } else {
         transformStack.push(parentM);
       }
       
-      const idMatch = tag.match(/\bid="([^"]+)"/i);
-      const labelMatch = tag.match(/\binkscape:label="([^"]+)"/i);
-      const id = idMatch ? idMatch[1] : '';
-      const label = labelMatch ? labelMatch[1] : '';
+      const id = attrs['id'] || '';
+      const label = attrs['inkscape:label'] || '';
       
       const isLayoutGroup = /MARGEN|CAJETIN|firmas|Firmas/i.test(label) || 
                             /MARGEN|CAJETIN/i.test(id) || 
                             ['layer-oc2', 'layer-oc4', 'layer-oc6', 'g120912', 'g120914'].includes(id);
                             
       if (isLayoutGroup) {
-        const styleMatch = tag.match(/\bstyle="([^"]+)"/i);
-        if (styleMatch) {
-          modifiedTag = tag.replace(/style="([^"]+)"/i, `style="${styleMatch[1]};display:none;"`);
+        if (attrs['style']) {
+          attrs['style'] = attrs['style'] + ';display:none;';
         } else {
-          modifiedTag = tag.replace(/>/, ' style="display:none;">');
+          attrs['style'] = 'display:none;';
         }
+        modifiedTag = rebuildOpeningTag('g', attrs, false);
       }
       
     } else if (tag === '</g>' || tag === '</G>') {
@@ -312,16 +330,17 @@ function processSVG(filepath, outpath) {
         let textVal = tspanMatch ? tspanMatch[1] : textInner;
         textVal = textVal.replace(/<[^>]*>/g, '').trim();
         
-        const transformMatch = tag.match(/\btransform="([^"]+)"/i);
-        const localM = parseMatrix(transformMatch ? transformMatch[1] : null);
+        const openTagMatch = tag.match(/^<text[^>]*>/i);
+        const openTag = openTagMatch[0];
+        const attrs = parseAttributes(openTag);
+        
+        const localM = parseMatrix(attrs['transform']);
         const parentM = transformStack[transformStack.length - 1];
         const absM = multiplyMatrices(parentM, localM);
         
         let x = 0, y = 0;
-        const xMatch = tag.match(/\bx="([^"]+)"/i);
-        const yMatch = tag.match(/\by="([^"]+)"/i);
-        if (xMatch) x = parseFloat(xMatch[1]);
-        if (yMatch) y = parseFloat(yMatch[1]);
+        if (attrs['x']) x = parseFloat(attrs['x']);
+        if (attrs['y']) y = parseFloat(attrs['y']);
         const pt = transformPoint({ x, y }, absM);
         
         const isLayout = layoutKeywords.some(kw => textVal.toUpperCase().includes(kw)) ||
@@ -329,21 +348,22 @@ function processSVG(filepath, outpath) {
                         (pt.x >= 2800 && (textVal.length <= 2 || /^[A-Z]$/.test(textVal)));
                         
         if (isLayout) {
-          const styleMatch = tag.match(/\bstyle="([^"]+)"/i);
-          if (styleMatch) {
-            modifiedTag = tag.replace(/style="([^"]+)"/i, `style="${styleMatch[1]};display:none;"`);
+          if (attrs['style']) {
+            attrs['style'] = attrs['style'] + ';display:none;';
           } else {
-            modifiedTag = tag.replace(/>/, ' style="display:none;">');
+            attrs['style'] = 'display:none;';
           }
+          const rebuiltOpen = rebuildOpeningTag('text', attrs, false);
+          modifiedTag = rebuiltOpen + tag.substring(openTag.length);
         }
       }
     } else if (tag.startsWith('<path') || tag.startsWith('<PATH')) {
-      const dMatch = tag.match(/\bd="([^"]+)"/i);
-      const transformMatch = tag.match(/\btransform="([^"]+)"/i);
+      const isSelfClosing = tag.trim().endsWith('/>');
+      const attrs = parseAttributes(tag);
       
-      if (dMatch) {
-        const d = dMatch[1];
-        const localM = parseMatrix(transformMatch ? transformMatch[1] : null);
+      if (attrs['d']) {
+        const d = attrs['d'];
+        const localM = parseMatrix(attrs['transform']);
         const parentM = transformStack[transformStack.length - 1];
         const absM = multiplyMatrices(parentM, localM);
         
@@ -362,15 +382,15 @@ function processSVG(filepath, outpath) {
           const height = maxY - minY;
           
           if (area >= 5000000) {
-            // Hide global sheet border
-            const styleMatch = tag.match(/\bstyle="([^"]+)"/i);
-            if (styleMatch) {
-              modifiedTag = tag.replace(/style="([^"]+)"/i, `style="${styleMatch[1]};display:none;"`);
+            // Hide global page border
+            if (attrs['style']) {
+              attrs['style'] = attrs['style'] + ';display:none;';
             } else {
-              modifiedTag = tag.replace(/>/, ' style="display:none;">');
+              attrs['style'] = 'display:none;';
             }
+            modifiedTag = rebuildOpeningTag('path', attrs, isSelfClosing);
           } else if (area > 200 && width > 5 && height > 5 && center.x < 2850) {
-            // Match closest text label
+            // Match closest room text label
             let closestText = null;
             let minDist = Infinity;
             
@@ -391,9 +411,8 @@ function processSVG(filepath, outpath) {
             }
             
             let newStyle = '';
-            const styleMatch = tag.match(/\bstyle="([^"]+)"/i);
-            if (styleMatch) {
-              const style = styleMatch[1];
+            if (attrs['style']) {
+              const style = attrs['style'];
               if (style.includes('fill:')) {
                 newStyle = style.replace(/fill:\s*[^;]+/, `fill:${color}`);
               } else {
@@ -402,12 +421,8 @@ function processSVG(filepath, outpath) {
             } else {
               newStyle = `fill:${color}`;
             }
-            
-            if (tag.match(/\bstyle="([^"]+)"/i)) {
-              modifiedTag = tag.replace(/style="([^"]+)"/i, `style="${newStyle}"`);
-            } else {
-              modifiedTag = tag.replace(/>/, ` style="${newStyle}">`);
-            }
+            attrs['style'] = newStyle;
+            modifiedTag = rebuildOpeningTag('path', attrs, isSelfClosing);
           }
         }
       }
@@ -424,7 +439,7 @@ function processSVG(filepath, outpath) {
   console.log(`Successfully saved colored SVG to: ${outpath}`);
 }
 
-// 7. Run the script on the target Mapas directory
+// 9. Run the script on the target Mapas directory
 const mapsDir = 'C:\\Users\\PC\\Pictures\\Mapas';
 const outputDir = path.join(mapsDir, 'Coloreados');
 
