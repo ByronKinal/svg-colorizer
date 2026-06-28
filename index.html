@@ -1382,10 +1382,226 @@
     });
 
     // PRE-DEFINED TEXT TO COLOR PALETTE MAPPING
+    function getColorForText(text) {
+      const t = text.toLowerCase().trim();
+      if (t.match(/^b\s*\d+$/) || t === 's.s.' || t === 'ss' || t === 's.s' || t.includes('baño') || t.includes('sanitario')) {
+        return '#1E90FF'; // Azul
+      }
+      if (t === 's' || t === 'b' || t.includes('rampa') || t.includes('gradas') || t.includes('escalera') || t.includes('elevador') || t.includes('ascensor') || t.includes('conexion') || t.includes('conexión')) {
+        return '#FF4500'; // Rojo
+      }
+      if (t.includes('césped') || t.includes('cesped') || t.includes('jardín') || t.includes('jardin') || t.includes('verde') || t.includes('grama') || t.includes('jardines') || t.includes('cancha')) {
+        return '#90EE90'; // Verde claro
+      }
+      if (t.includes('planta') || t.includes('macetero') || t.includes('macetera') || t.includes('plantas')) {
+        return '#228B22'; // Verde oscuro
+      }
+      if (t.includes('concreto') || t.includes('pasillo') || t.includes('corredor') || t.includes('vestibulo') || t.includes('lobby') || t.includes('ingreso') || t.includes('parqueo') || t.includes('plaza') || t.includes('patio')) {
+        return '#D3D3D3'; // Gris
+      }
+      if (t.includes('suelo') || t.includes('colegio') || t.includes('cancha') || t.includes('patio principal')) {
+        return '#FFDAB9'; // Piel
+      }
+      const classroomKeywords = ['aula', 'sala', 'tics', 'reuniones', 'preceptoria', 'oficina', 'secretaria', 'direccion', 'coordinacion', 'orientacion', 'profesores', 'contabilidad', 'auditorio', 'fablab', 'taller', 'enfermeria', 'básicos', 'diversificado'];
+      const isCode = /^[a-z](-\d+|\d+)$/i.test(t);
+      if (isCode || classroomKeywords.some(kw => t.includes(kw))) {
+        return '#FFA500'; // Naranja
+      }
+      return '#FFE4C4'; // Bisque fallback
+    }
+
+    function isLayoutText(text) {
+      const layoutKeywords = [
+        'PLANTA', 'ESCALA', 'CONSTRUYE', 'PROPIETARIO', 'EJECUTOR', 'CONTENIDO', 
+        'PROYECTO', 'DISEÑO', 'DIBUJO', 'FECHA', 'MAYO', 'TIMBRE', 'HOJA', 
+        'FIRMA', 'OBSERVACIONES', 'MARGEN', 'CAJETIN', 'KINAL', 'FIRMA Y SELLO', 
+        'ESCALA INDICADA', 'AREA DE AMBIENTES', 'Y CIRCULACION', 'C.S.C.M', 'RUTAS DE EVACUACIÓN',
+        'NIVEL', 'PRIMER', 'SEGUNDO', 'TERCER', 'CUARTO'
+      ];
+      return layoutKeywords.some(kw => text.toUpperCase().includes(kw));
+    }
+
     // CLIENT-SIDE AUTO-COLORIZER
+    autocolorBtn.addEventListener('click', () => {
+      const svgEl = canvas.querySelector('svg');
+      if (!svgEl) return;
+      
+      loader.classList.add('visible');
+      deselectPoly();
+      setTimeout(() => {
+        try {
+          const textElements = svgEl.querySelectorAll('text');
+          const texts = Array.from(textElements).map(t => {
+            const bbox = t.getBBox();
+            return {
+              text: t.textContent.replace(/<[^>]*>/g, '').trim(),
+              x: bbox.x + bbox.width / 2,
+              y: bbox.y + bbox.height / 2
+            };
+          }).filter(t => t.text && !isLayoutText(t.text));
+
+          const paths = svgEl.querySelectorAll('path');
+          
+          paths.forEach(path => {
+            const id = path.getAttribute('id') || '';
+            const bbox = path.getBBox();
+            const area = bbox.width * bbox.height;
+            if (area >= 5000000 || bbox.width < 2 || bbox.height < 2) return;
+            
+            const style = path.getAttribute('style') || '';
+            const fill = path.getAttribute('fill') || '';
+            
+            const isWhiteFill = fill.toLowerCase() === '#ffffff' || 
+                                fill.toLowerCase() === 'white' || 
+                                fill.toLowerCase() === '#fff' ||
+                                style.toLowerCase().includes('fill:#ffffff') ||
+                                style.toLowerCase().includes('fill:white') ||
+                                style.toLowerCase().includes('fill:#fff') ||
+                                (!style.includes('fill:') && !fill);
+                                
+            const isNoFillOutline = style.toLowerCase().includes('fill:none') && 
+                                    style.toLowerCase().includes('stroke:#000000') &&
+                                    area > 200 && bbox.width > 5 && bbox.height > 5;
+                                    
+            if (isWhiteFill || isNoFillOutline) {
+              const cx = bbox.x + bbox.width / 2;
+              const cy = bbox.y + bbox.height / 2;
+              
+              let closestText = null;
+              let minDist = Infinity;
+              
+              texts.forEach(t => {
+                const dist = Math.hypot(cx - t.x, cy - t.y);
+                if (dist < minDist) {
+                  minDist = dist;
+                  closestText = t;
+                }
+              });
+              
+              if (closestText && minDist < 200) {
+                const color = getColorForText(closestText.text);
+                let newStyle = style;
+                if (style.includes('fill:')) {
+                  newStyle = style.replace(/fill:\s*[^;]+/, `fill:${color}`);
+                } else {
+                  newStyle = style + `;fill:${color}`;
+                }
+                path.setAttribute('style', newStyle);
+              }
+            }
+          });
+          
+          toast.textContent = '¡Coloreado con éxito! ⚡';
+          toast.classList.add('visible');
+          setTimeout(() => toast.classList.remove('visible'), 3000);
+        } catch (err) {
+          console.error(err);
+          alert('Error en autocoloreado: ' + err.message);
+        } finally {
+          loader.classList.remove('visible');
+        }
+      }, 50);
+    });
+
     // CLIENT-SIDE CLEAR ALL COLORS
-    // Initial Load and UI settings
-    // ...
+    clearBtn.addEventListener('click', () => {
+      const svgEl = canvas.querySelector('svg');
+      if (!svgEl) return;
+      
+      loader.classList.add('visible');
+      deselectPoly();
+      setTimeout(() => {
+        try {
+          const paths = svgEl.querySelectorAll('path');
+          paths.forEach(path => {
+            const bbox = path.getBBox();
+            const area = bbox.width * bbox.height;
+            if (area >= 5000000) return;
+            
+            let style = path.getAttribute('style') || '';
+            if (style.includes('fill:')) {
+              style = style.replace(/fill:\s*[^;]+/, 'fill:#ffffff');
+              path.setAttribute('style', style);
+            }
+          });
+          
+          toast.textContent = '¡Colores borrados! 🧹';
+          toast.classList.add('visible');
+          setTimeout(() => toast.classList.remove('visible'), 3000);
+        } catch (err) {
+          console.error(err);
+          alert('Error al limpiar: ' + err.message);
+        } finally {
+          loader.classList.remove('visible');
+        }
+      }, 50);
+    });
+
+    // Pan & Drag viewer movement
+    viewer.addEventListener('mousedown', (e) => {
+      if (activeTool === 'paint' && e.target.closest('path')) return;
+      if (activeTool === 'draw' && e.target.closest('.custom-poly')) return;
+      if (activeTool === 'draw' && e.target.closest('#poly-handles-group')) return;
+      if (e.target.closest('.controls') || e.target.closest('.legend-panel') || e.target.closest('.sidebar')) return;
+      
+      isDragging = true;
+      startX = e.clientX - currentX;
+      startY = e.clientY - currentY;
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    viewer.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      currentX = e.clientX - startX;
+      currentY = e.clientY - startY;
+      updateTransform();
+    });
+
+    // Wheel Zoom
+    viewer.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomFactor = 1.1;
+      const mouseX = e.clientX - viewer.getBoundingClientRect().left;
+      const mouseY = e.clientY - viewer.getBoundingClientRect().top;
+
+      const cx = (mouseX - currentX) / currentScale;
+      const cy = (mouseY - currentY) / currentScale;
+
+      if (e.deltaY < 0) {
+        currentScale = Math.min(currentScale * zoomFactor, 5);
+      } else {
+        currentScale = Math.max(currentScale / zoomFactor, 0.05);
+      }
+
+      currentX = mouseX - cx * currentScale;
+      currentY = mouseY - cy * currentScale;
+      
+      updateTransform();
+    }, { passive: false });
+
+    // Zoom Buttons
+    document.getElementById('zoom-in').addEventListener('click', () => {
+      currentScale = Math.min(currentScale * 1.2, 5);
+      updateTransform();
+    });
+
+    document.getElementById('zoom-out').addEventListener('click', () => {
+      currentScale = Math.max(currentScale / 1.2, 0.05);
+      updateTransform();
+    });
+
+    document.getElementById('zoom-reset').addEventListener('click', () => {
+      resetView();
+    });
+
+    // Initial Load
+    window.addEventListener('DOMContentLoaded', () => {
+      document.documentElement.style.setProperty('--canvas-bg', '#ffffff');
+      loadSVG('NIVEL-1-KINAL.svg');
+    });
   </script>
 </body>
 </html>
