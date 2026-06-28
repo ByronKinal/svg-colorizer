@@ -157,10 +157,10 @@
       box-shadow: 0 0 10px var(--accent-glow);
     }
 
-    /* Action buttons: Autocolor & Save */
+    /* Action buttons */
     .action-group {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 0.5rem;
     }
 
@@ -168,44 +168,46 @@
       border: none;
       color: #fff;
       font-weight: 600;
-      padding: 0.75rem;
+      padding: 0.75rem 0.5rem;
       border-radius: 10px;
       cursor: pointer;
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
+      font-size: 0.85rem;
       transition: all 0.2s ease;
       box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
 
     .btn-autocolor {
-      background: #f97316; /* Orange */
-      box-shadow: 0 4px 10px rgba(249, 115, 22, 0.3);
+      background: #f97316;
     }
     .btn-autocolor:hover {
       background: #ea580c;
     }
 
     .btn-clear {
-      background: #475569; /* Slate 600 */
+      background: #475569;
     }
     .btn-clear:hover {
       background: #334155;
     }
 
     .btn-save {
-      background: #10b981; /* Emerald 500 */
+      grid-column: span 2;
+      background: #10b981;
       box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+      font-size: 0.95rem;
+      padding: 0.85rem;
     }
     .btn-save:hover {
       background: #059669;
       transform: translateY(-1px);
-      box-shadow: 0 6px 15px rgba(16, 185, 129, 0.4);
     }
 
-    /* Paint Panel (Hidden when not in paint/blocks mode) */
-    .paint-panel {
+    /* Unified Edit Panel */
+    .edit-panel {
       background: rgba(15, 23, 42, 0.6);
       border: 1px solid var(--panel-border);
       border-radius: 12px;
@@ -221,10 +223,11 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .paint-panel h3 {
+    .edit-panel h3 {
       font-size: 0.8rem;
       color: var(--text-muted);
       text-transform: uppercase;
+      margin-bottom: 0.25rem;
     }
 
     /* Swatches Grid */
@@ -352,8 +355,8 @@
       cursor: crosshair;
     }
 
-    .viewer-container.blocks-active {
-      cursor: default;
+    .viewer-container.draw-active {
+      cursor: crosshair;
     }
 
     .canvas-wrapper {
@@ -387,18 +390,18 @@
       stroke-width: 20px !important;
     }
 
-    /* Interactive Custom Blocks styling in blocks mode */
-    .viewer-container.blocks-active svg .custom-rect {
+    /* Interactive Custom Polygons styling in draw mode */
+    .viewer-container.draw-active svg .custom-poly {
       cursor: move;
       pointer-events: auto !important;
     }
 
-    .viewer-container.blocks-active svg .custom-rect:hover {
+    .viewer-container.draw-active svg .custom-poly:hover {
       stroke: #f97316 !important;
       stroke-width: 4px !important;
     }
 
-    .viewer-container.blocks-active svg .custom-rect.selected {
+    .viewer-container.draw-active svg .custom-poly.selected {
       stroke: #38bdf8 !important;
       stroke-width: 5px !important;
     }
@@ -533,6 +536,17 @@
       to { transform: rotate(360deg); }
     }
 
+    /* Helper guide text */
+    .helper-text {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.5rem;
+      border-radius: 6px;
+      border-left: 2px solid var(--accent-color);
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .app-container {
@@ -573,15 +587,15 @@
           <button class="tool-btn" id="tool-paint" title="Pintar salones y espacios">
             <span>🪣 Pintar</span>
           </button>
-          <button class="tool-btn" id="tool-blocks" title="Agregar y editar bloques de colores libres">
-            <span>➕ Bloques</span>
+          <button class="tool-btn" id="tool-draw" title="Dibujar bloques de colores libres">
+            <span>📐 Dibujar</span>
           </button>
         </div>
       </div>
 
-      <!-- Colors Palette Options (Shown in Paint and Blocks modes) -->
-      <div class="paint-panel" id="color-panel">
-        <h3 id="palette-title">Elegir Color</h3>
+      <!-- Unified Edit Panel (Colors palette & custom options) -->
+      <div class="edit-panel" id="edit-panel">
+        <h3>Elegir Color</h3>
         <div class="swatches-grid">
           <div class="swatch selected" style="background-color: #FFA500;" data-color="#FFA500" title="Salones (Naranja)"></div>
           <div class="swatch" style="background-color: #1E90FF;" data-color="#1E90FF" title="Baños (Azul)"></div>
@@ -597,34 +611,36 @@
             <input type="color" id="custom-color-input" value="#ff00ff">
           </div>
         </div>
-      </div>
 
-      <!-- Blocks Panel Controls (Shown only in Blocks mode) -->
-      <div class="paint-panel" id="blocks-panel" style="display: none; border-color: #38bdf8;">
-        <h3>Editar Bloques</h3>
-        <button class="action-btn" id="add-rect-btn" style="background: #38bdf8; width: 100%; margin-bottom: 0.5rem;" title="Crear un nuevo rectángulo de color en el centro">
-          <span>➕ Crear Rectángulo</span>
-        </button>
-        <div style="margin: 0.5rem 0;">
-          <label style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-            <span>Opacidad:</span>
-            <strong id="opacity-val">0.7</strong>
-          </label>
-          <input type="range" id="rect-opacity-input" min="0.1" max="1.0" step="0.05" value="0.7" style="width: 100%; cursor: pointer;">
+        <!-- Custom Polygons specific options (Shown only when in draw mode) -->
+        <div id="draw-options" style="display: none; margin-top: 0.5rem; flex-direction: column; gap: 0.5rem;">
+          <div style="border-top: 1px solid var(--panel-border); padding-top: 0.5rem;">
+            <label style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+              <span>Opacidad:</span>
+              <strong id="opacity-val">0.70</strong>
+            </label>
+            <input type="range" id="rect-opacity-input" min="0.1" max="1.0" step="0.05" value="0.7" style="width: 100%; cursor: pointer;">
+          </div>
+          
+          <div class="helper-text">
+            👉 Haz clic en el mapa para colocar los puntos.<br>
+            👉 Doble clic o presiona Enter para cerrar la forma.<br>
+            👉 Arrastra los puntos celestes para ajustar la forma.
+          </div>
+
+          <button class="action-btn" id="delete-rect-btn" style="background: #ef4444; width: 100%;" title="Eliminar la forma seleccionada">
+            <span>🗑️ Eliminar Forma</span>
+          </button>
         </div>
-        <button class="action-btn" id="delete-rect-btn" style="background: #ef4444; width: 100%; margin-top: 0.5rem;" title="Eliminar el bloque seleccionado">
-          <span>🗑️ Eliminar Bloque</span>
-        </button>
       </div>
 
       <!-- Actions -->
       <div class="sidebar-section action-group">
-        <h2>Acciones</h2>
         <button class="action-btn btn-autocolor" id="autocolor-btn" title="Colorear automáticamente basándose en los textos del plano">
           <span>⚡ Autocolorear</span>
         </button>
         <button class="action-btn btn-clear" id="clear-btn" title="Limpiar todos los colores del plano">
-          <span>🧹 Limpiar Colores</span>
+          <span>🧹 Limpiar</span>
         </button>
         <button class="action-btn btn-save" id="save-map-btn" title="Guardar cambios del plano en tu disco">
           <span>💾 Guardar Plano</span>
@@ -721,12 +737,11 @@
     // Tools UI Buttons
     const toolPanBtn = document.getElementById('tool-pan');
     const toolPaintBtn = document.getElementById('tool-paint');
-    const toolBlocksBtn = document.getElementById('tool-blocks');
+    const toolDrawBtn = document.getElementById('tool-draw');
     
-    // Side panels
-    const colorPanel = document.getElementById('color-panel');
-    const paletteTitle = document.getElementById('palette-title');
-    const blocksPanel = document.getElementById('blocks-panel');
+    // Panels
+    const editPanel = document.getElementById('edit-panel');
+    const drawOptions = document.getElementById('draw-options');
     
     const swatches = document.querySelectorAll('.swatch');
     const customColorInput = document.getElementById('custom-color-input');
@@ -734,8 +749,7 @@
     const autocolorBtn = document.getElementById('autocolor-btn');
     const clearBtn = document.getElementById('clear-btn');
     
-    // Blocks specific controls
-    const addRectBtn = document.getElementById('add-rect-btn');
+    // Draw specific controls
     const deleteRectBtn = document.getElementById('delete-rect-btn');
     const rectOpacityInput = document.getElementById('rect-opacity-input');
     const opacityValSpan = document.getElementById('opacity-val');
@@ -754,25 +768,53 @@
     let activeRectOpacity = 0.7;
     let currentFilename = 'NIVEL-1-KINAL.svg';
 
-    // Blocks manipulation state (Now working in absolute, non-inverted root SVG space!)
-    let selectedRect = null;
-    let resizeHandle = null;
+    // Interactive Polygon State
+    let selectedPoly = null;
+    let handlesGroup = null;
     
-    let isDraggingRect = false;
-    let isResizingRect = false;
+    // Drawing a new polygon
+    let isDrawingPoly = false;
+    let polyPoints = []; // Array of {x, y}
+    let tempPolyline = null;
+    let tempLine = null;
+    let drawDots = [];
+    
+    // Editing state
+    let isDraggingPoly = false;
+    let isDraggingVertex = false;
+    let activeVertexIndex = -1;
     
     let startMouseX = 0;
     let startMouseY = 0;
-    let rectStartX = 0;
-    let rectStartY = 0;
-    let rectStartWidth = 0;
-    let rectStartHeight = 0;
+    let polyStartPoints = [];
+
+    // Helper functions to parse and format path point coordinates
+    function getPathPoints(pathEl) {
+      const d = pathEl.getAttribute('d') || '';
+      const numbers = d.match(/-?\d+(\.\d+)?/g) || [];
+      const pts = [];
+      for (let i = 0; i < numbers.length; i += 2) {
+        pts.push({ x: parseFloat(numbers[i]), y: parseFloat(numbers[i+1]) });
+      }
+      return pts;
+    }
+
+    function setPathPoints(pathEl, pts) {
+      if (pts.length === 0) return;
+      let d = `M ${pts[0].x},${pts[0].y}`;
+      for (let i = 1; i < pts.length; i++) {
+        d += ` L ${pts[i].x},${pts[i].y}`;
+      }
+      d += ' Z';
+      pathEl.setAttribute('d', d);
+    }
 
     // Load active SVG
     async function loadSVG(filename) {
       currentFilename = filename;
       loader.classList.add('visible');
-      deselectRect();
+      deselectPoly();
+      cancelDrawing();
       try {
         const response = await fetch(`/api/maps/${filename}`);
         if (!response.ok) throw new Error('Error al cargar plano');
@@ -785,7 +827,6 @@
           svgEl.style.width = '100%';
           svgEl.style.height = '100%';
           
-          // Setup custom-color-blocks container at the root level of the SVG (outside AutoCAD inversion group!)
           setupBlocksContainer(svgEl);
         }
         
@@ -832,42 +873,38 @@
     // Tool switching handlers
     toolPanBtn.addEventListener('click', () => {
       activeTool = 'pan';
-      deselectRect();
+      deselectPoly();
+      cancelDrawing();
       toolPanBtn.classList.add('active');
       toolPaintBtn.classList.remove('active');
-      toolBlocksBtn.classList.remove('active');
+      toolDrawBtn.classList.remove('active');
       
-      colorPanel.style.display = 'none';
-      blocksPanel.style.display = 'none';
-      
+      editPanel.style.display = 'none';
       viewer.className = 'viewer-container';
     });
 
     toolPaintBtn.addEventListener('click', () => {
       activeTool = 'paint';
-      deselectRect();
+      deselectPoly();
+      cancelDrawing();
       toolPaintBtn.classList.add('active');
       toolPanBtn.classList.remove('active');
-      toolBlocksBtn.classList.remove('active');
+      toolDrawBtn.classList.remove('active');
       
-      paletteTitle.textContent = "Elegir Color de Pintura";
-      colorPanel.style.display = 'flex';
-      blocksPanel.style.display = 'none';
-      
+      editPanel.style.display = 'flex';
+      drawOptions.style.display = 'none';
       viewer.className = 'viewer-container paint-active';
     });
 
-    toolBlocksBtn.addEventListener('click', () => {
-      activeTool = 'blocks';
-      toolBlocksBtn.classList.add('active');
+    toolDrawBtn.addEventListener('click', () => {
+      activeTool = 'draw';
+      toolDrawBtn.classList.add('active');
       toolPanBtn.classList.remove('active');
       toolPaintBtn.classList.remove('active');
       
-      paletteTitle.textContent = "Color del Rectángulo";
-      colorPanel.style.display = 'flex';
-      blocksPanel.style.display = 'flex';
-      
-      viewer.className = 'viewer-container blocks-active';
+      editPanel.style.display = 'flex';
+      drawOptions.style.display = 'flex';
+      viewer.className = 'viewer-container draw-active';
     });
 
     // Color Swatches Selection
@@ -877,9 +914,8 @@
         sw.classList.add('selected');
         activePaintColor = sw.dataset.color;
         
-        // If a custom block is selected, change its color immediately
-        if (activeTool === 'blocks' && selectedRect) {
-          selectedRect.setAttribute('fill', activePaintColor);
+        if (activeTool === 'draw' && selectedPoly) {
+          selectedPoly.setAttribute('fill', activePaintColor);
         }
       });
     });
@@ -888,9 +924,8 @@
       swatches.forEach(s => s.classList.remove('selected'));
       activePaintColor = e.target.value;
       
-      // If a custom block is selected, change its color immediately
-      if (activeTool === 'blocks' && selectedRect) {
-        selectedRect.setAttribute('fill', activePaintColor);
+      if (activeTool === 'draw' && selectedPoly) {
+        selectedPoly.setAttribute('fill', activePaintColor);
       }
     });
 
@@ -900,8 +935,8 @@
       activeRectOpacity = val;
       opacityValSpan.textContent = val.toFixed(2);
       
-      if (selectedRect) {
-        selectedRect.setAttribute('fill-opacity', val);
+      if (selectedPoly) {
+        selectedPoly.setAttribute('fill-opacity', val);
       }
     });
 
@@ -909,7 +944,8 @@
     canvas.addEventListener('click', (e) => {
       if (activeTool === 'paint') {
         const path = e.target.closest('path');
-        if (path) {
+        // Do not paint custom-polys in paint mode
+        if (path && !path.classList.contains('custom-poly')) {
           e.preventDefault();
           e.stopPropagation();
           
@@ -924,10 +960,8 @@
       }
     });
 
-    // Setup blocks container & handles inside SVG structure
+    // Setup blocks container layer inside SVG structure
     function setupBlocksContainer(svgEl) {
-      // Find or create custom blocks group layer at the ROOT level of the SVG,
-      // right before the first <g> group. This bypasses AutoCAD scale flips completely!
       let blockGroup = svgEl.querySelector('#custom-color-blocks');
       if (!blockGroup) {
         blockGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -935,63 +969,37 @@
         svgEl.insertBefore(blockGroup, svgEl.querySelector('g'));
       }
 
-      // Add class and interactability to any existing rects in this group
-      const rects = blockGroup.querySelectorAll('rect');
-      rects.forEach(r => {
-        r.classList.add('custom-rect');
+      // Mark any existing paths as custom-poly
+      const paths = blockGroup.querySelectorAll('path');
+      paths.forEach(p => {
+        p.classList.add('custom-poly');
       });
 
-      // Create the shared single resize handle circle at the bottom of blockGroup
-      let handle = blockGroup.querySelector('#rect-resize-handle');
-      if (!handle) {
-        handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        handle.setAttribute('id', 'rect-resize-handle');
-        handle.setAttribute('r', '8'); // standard absolute pixels
-        handle.setAttribute('fill', '#ffffff');
-        handle.setAttribute('stroke', '#38bdf8');
-        handle.setAttribute('stroke-width', '3');
-        handle.setAttribute('style', 'cursor: se-resize; display: none; pointer-events: auto;');
-        blockGroup.appendChild(handle);
+      // Create handle layer
+      let handles = blockGroup.querySelector('#poly-handles-group');
+      if (!handles) {
+        handles = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        handles.setAttribute('id', 'poly-handles-group');
+        blockGroup.appendChild(handles);
       }
-      resizeHandle = handle;
-      
-      // Wire handle pointer events
-      handle.addEventListener('pointerdown', (e) => {
-        if (activeTool !== 'blocks' || !selectedRect) return;
-        e.preventDefault();
-        e.stopPropagation();
-        
-        isResizingRect = true;
-        startMouseX = e.clientX;
-        startMouseY = e.clientY;
-        rectStartWidth = parseFloat(selectedRect.getAttribute('width'));
-        rectStartHeight = parseFloat(selectedRect.getAttribute('height'));
-      });
+      handlesGroup = handles;
     }
 
-    // Select custom rectangle block
-    function selectRect(rect) {
-      deselectRect();
-      selectedRect = rect;
-      selectedRect.classList.add('selected');
+    // Select polygon shape
+    function selectPoly(poly) {
+      deselectPoly();
+      selectedPoly = poly;
+      selectedPoly.classList.add('selected');
       
-      // Position the resize handle at bottom-right corner
-      const x = parseFloat(selectedRect.getAttribute('x'));
-      const y = parseFloat(selectedRect.getAttribute('y'));
-      const w = parseFloat(selectedRect.getAttribute('width'));
-      const h = parseFloat(selectedRect.getAttribute('height'));
+      renderPolyHandles();
       
-      resizeHandle.setAttribute('cx', x + w);
-      resizeHandle.setAttribute('cy', y + h);
-      resizeHandle.style.display = 'block';
-      
-      // Update sidebar sliders to match this block's attributes
-      const op = parseFloat(selectedRect.getAttribute('fill-opacity') || '0.7');
+      // Update sidebar opacity
+      const op = parseFloat(selectedPoly.getAttribute('fill-opacity') || '0.7');
       rectOpacityInput.value = op;
       opacityValSpan.textContent = op.toFixed(2);
       
       // Select appropriate swatch in palette
-      const fill = selectedRect.getAttribute('fill') || '#FFA500';
+      const fill = selectedPoly.getAttribute('fill') || '#FFA500';
       swatches.forEach(s => {
         if (s.dataset.color.toLowerCase() === fill.toLowerCase()) {
           s.classList.add('selected');
@@ -1001,117 +1009,237 @@
       });
     }
 
-    // Deselect rectangle block
-    function deselectRect() {
-      if (selectedRect) {
-        selectedRect.classList.remove('selected');
-        selectedRect = null;
+    // Deselect shape
+    function deselectPoly() {
+      if (selectedPoly) {
+        selectedPoly.classList.remove('selected');
+        selectedPoly = null;
       }
-      if (resizeHandle) {
-        resizeHandle.style.display = 'none';
+      if (handlesGroup) {
+        handlesGroup.innerHTML = '';
       }
+    }
+
+    // Render handle dots for selected polygon vertices
+    function renderPolyHandles() {
+      if (!selectedPoly || !handlesGroup) return;
+      handlesGroup.innerHTML = '';
+      
+      const pts = getPathPoints(selectedPoly);
+      pts.forEach((p, idx) => {
+        const handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        handle.setAttribute('cx', p.x);
+        handle.setAttribute('cy', p.y);
+        handle.setAttribute('r', '8'); // 8px absolute size
+        handle.setAttribute('fill', '#ffffff');
+        handle.setAttribute('stroke', '#38bdf8');
+        handle.setAttribute('stroke-width', '3');
+        handle.setAttribute('style', 'cursor: pointer; pointer-events: auto;');
+        handle.setAttribute('data-index', idx);
+        
+        handle.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          isDraggingVertex = true;
+          activeVertexIndex = idx;
+          startMouseX = e.clientX;
+          startMouseY = e.clientY;
+          polyStartPoints = getPathPoints(selectedPoly);
+        });
+        
+        handlesGroup.appendChild(handle);
+      });
     }
 
     // Handle clicks/selections on canvas
     viewer.addEventListener('pointerdown', (e) => {
-      if (activeTool !== 'blocks') return;
+      if (activeTool !== 'draw') return;
+      if (isDrawingPoly) return; // ignore selections during active draw
       
-      const rect = e.target.closest('.custom-rect');
-      if (rect) {
+      const poly = e.target.closest('.custom-poly');
+      if (poly) {
         e.preventDefault();
         e.stopPropagation();
         
-        selectRect(rect);
+        selectPoly(poly);
         
-        isDraggingRect = true;
+        isDraggingPoly = true;
         startMouseX = e.clientX;
         startMouseY = e.clientY;
-        rectStartX = parseFloat(rect.getAttribute('x'));
-        rectStartY = parseFloat(rect.getAttribute('y'));
-      } else if (e.target !== resizeHandle) {
-        // Deselect if clicking outside
-        deselectRect();
+        polyStartPoints = getPathPoints(selectedPoly);
+      } else if (!e.target.closest('#poly-handles-group')) {
+        // Deselect if clicking outside shapes
+        deselectPoly();
       }
     });
 
+    // Start drawing vertex placement when clicking empty canvas wrapper
+    viewer.addEventListener('click', (e) => {
+      if (activeTool !== 'draw') return;
+      if (e.target.closest('.sidebar') || e.target.closest('.controls') || e.target.closest('.legend-panel')) return;
+      if (e.target.closest('.custom-poly') || e.target.closest('#poly-handles-group')) return;
+      
+      // Calculate local mouse click coordinate inside SVG sheet
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / currentScale;
+      const y = (e.clientY - rect.top) / currentScale;
+      
+      if (!isDrawingPoly) {
+        // Start new drawing
+        isDrawingPoly = true;
+        polyPoints = [{ x, y }];
+        deselectPoly();
+        
+        // Create active path container
+        const blockGroup = canvas.querySelector('#custom-color-blocks');
+        
+        tempPolyline = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+        tempPolyline.setAttribute('stroke', '#38bdf8');
+        tempPolyline.setAttribute('stroke-width', '3');
+        tempPolyline.setAttribute('stroke-dasharray', '5,5');
+        tempPolyline.setAttribute('fill', 'none');
+        blockGroup.appendChild(tempPolyline);
+        
+        tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tempLine.setAttribute('stroke', '#38bdf8');
+        tempLine.setAttribute('stroke-width', '2');
+        tempLine.setAttribute('stroke-dasharray', '3,3');
+        blockGroup.appendChild(tempLine);
+        
+        addDrawDot(x, y);
+      } else {
+        // Check if clicked close to the first point to CLOSE
+        const dist = Math.hypot(x - polyPoints[0].x, y - polyPoints[0].y);
+        if (dist < 12) {
+          finishDrawing();
+        } else {
+          // Add point
+          polyPoints.push({ x, y });
+          addDrawDot(x, y);
+          updateTempPolyline();
+        }
+      }
+    });
+
+    // Add visible placeholder dot during drawing
+    function addDrawDot(x, y) {
+      const blockGroup = canvas.querySelector('#custom-color-blocks');
+      const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      dot.setAttribute('cx', x);
+      dot.setAttribute('cy', y);
+      dot.setAttribute('r', '5');
+      dot.setAttribute('fill', '#38bdf8');
+      blockGroup.appendChild(dot);
+      drawDots.push(dot);
+    }
+
+    function updateTempPolyline() {
+      if (!tempPolyline) return;
+      const ptsStr = polyPoints.map(p => `${p.x},${p.y}`).join(' ');
+      tempPolyline.setAttribute('points', ptsStr);
+    }
+
+    // Double click closes and finishes the shape immediately
+    viewer.addEventListener('dblclick', (e) => {
+      if (activeTool === 'draw' && isDrawingPoly) {
+        e.preventDefault();
+        e.stopPropagation();
+        finishDrawing();
+      }
+    });
+
+    // Press Enter to close shape
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && activeTool === 'draw' && isDrawingPoly) {
+        finishDrawing();
+      }
+    });
+
+    function finishDrawing() {
+      if (polyPoints.length < 3) {
+        cancelDrawing();
+        return;
+      }
+      
+      const blockGroup = canvas.querySelector('#custom-color-blocks');
+      const newPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      newPath.setAttribute('class', 'custom-poly');
+      newPath.setAttribute('fill', activePaintColor);
+      newPath.setAttribute('fill-opacity', activeRectOpacity);
+      newPath.setAttribute('style', 'stroke:none;');
+      
+      setPathPoints(newPath, polyPoints);
+      
+      // Insert path before the handles group layer
+      blockGroup.insertBefore(newPath, handlesGroup);
+      
+      cancelDrawing();
+      selectPoly(newPath);
+    }
+
+    function cancelDrawing() {
+      isDrawingPoly = false;
+      polyPoints = [];
+      
+      if (tempPolyline) { tempPolyline.remove(); tempPolyline = null; }
+      if (tempLine) { tempLine.remove(); tempLine = null; }
+      
+      drawDots.forEach(d => d.remove());
+      drawDots = [];
+    }
+
     // Move/Resize mouse movements
     viewer.addEventListener('pointermove', (e) => {
-      if (activeTool !== 'blocks' || !selectedRect) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / currentScale;
+      const y = (e.clientY - rect.top) / currentScale;
+
+      // Update cursor preview line during drawing
+      if (isDrawingPoly && tempLine && polyPoints.length > 0) {
+        const lastPt = polyPoints[polyPoints.length - 1];
+        tempLine.setAttribute('x1', lastPt.x);
+        tempLine.setAttribute('y1', lastPt.y);
+        tempLine.setAttribute('x2', x);
+        tempLine.setAttribute('y2', y);
+      }
+
+      if (activeTool !== 'draw' || !selectedPoly) return;
       
       // Calculate delta in absolute SVG viewport space
       const dx = (e.clientX - startMouseX) / currentScale;
       const dy = (e.clientY - startMouseY) / currentScale;
       
-      if (isDraggingRect) {
+      if (isDraggingPoly) {
         e.preventDefault();
-        const nextX = rectStartX + dx;
-        const nextY = rectStartY + dy;
-        selectedRect.setAttribute('x', nextX);
-        selectedRect.setAttribute('y', nextY);
-        
-        // Update handle position to track drag
-        const w = parseFloat(selectedRect.getAttribute('width'));
-        const h = parseFloat(selectedRect.getAttribute('height'));
-        resizeHandle.setAttribute('cx', nextX + w);
-        resizeHandle.setAttribute('cy', nextY + h);
-      } else if (isResizingRect) {
+        const nextPoints = polyStartPoints.map(p => ({
+          x: p.x + dx,
+          y: p.y + dy
+        }));
+        setPathPoints(selectedPoly, nextPoints);
+        renderPolyHandles();
+      } else if (isDraggingVertex && activeVertexIndex !== -1) {
         e.preventDefault();
-        const nextW = Math.max(20, rectStartWidth + dx); // min width 20px
-        const nextH = Math.max(20, rectStartHeight + dy); // min height 20px
-        selectedRect.setAttribute('width', nextW);
-        selectedRect.setAttribute('height', nextH);
-        
-        // Update handle position to track resize
-        const x = parseFloat(selectedRect.getAttribute('x'));
-        const y = parseFloat(selectedRect.getAttribute('y'));
-        resizeHandle.setAttribute('cx', x + nextW);
-        resizeHandle.setAttribute('cy', y + nextH);
+        const nextPoints = [...polyStartPoints];
+        nextPoints[activeVertexIndex] = {
+          x: polyStartPoints[activeVertexIndex].x + dx,
+          y: polyStartPoints[activeVertexIndex].y + dy
+        };
+        setPathPoints(selectedPoly, nextPoints);
+        renderPolyHandles();
       }
     });
 
     window.addEventListener('pointerup', () => {
-      isDraggingRect = false;
-      isResizingRect = false;
+      isDraggingPoly = false;
+      isDraggingVertex = false;
+      activeVertexIndex = -1;
     });
 
-    // Create a new rectangle block in the center of the viewport
-    addRectBtn.addEventListener('click', () => {
-      const svgEl = canvas.querySelector('svg');
-      if (!svgEl) return;
-      
-      const blockGroup = svgEl.querySelector('#custom-color-blocks');
-      if (!blockGroup) return;
-      
-      // Determine center of current viewport in absolute coordinate space
-      const rawCenterX = (viewer.clientWidth / 2 - currentX) / currentScale;
-      const rawCenterY = (viewer.clientHeight / 2 - currentY) / currentScale;
-      
-      // Standard default rectangle size (roughly 240x160 px on screen)
-      const rectW = 240;
-      const rectH = 160;
-      
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('class', 'custom-rect');
-      rect.setAttribute('x', rawCenterX - rectW / 2);
-      rect.setAttribute('y', rawCenterY - rectH / 2);
-      rect.setAttribute('width', rectW);
-      rect.setAttribute('height', rectH);
-      rect.setAttribute('fill', activePaintColor);
-      rect.setAttribute('fill-opacity', activeRectOpacity);
-      rect.setAttribute('style', 'stroke:none;');
-      
-      // Insert block before the resize handle so handle remains on top
-      blockGroup.insertBefore(rect, resizeHandle);
-      
-      // Automatically select the newly created rectangle
-      selectRect(rect);
-    });
-
-    // Delete selected block
+    // Delete selected block shape
     deleteRectBtn.addEventListener('click', () => {
-      if (selectedRect) {
-        selectedRect.remove();
-        deselectRect();
+      if (selectedPoly) {
+        selectedPoly.remove();
+        deselectPoly();
       }
     });
 
@@ -1121,7 +1249,8 @@
       if (!svgEl) return;
       
       loader.classList.add('visible');
-      deselectRect(); // Hide handles before saving
+      deselectPoly(); // Hide handles before saving
+      cancelDrawing();
       
       try {
         const response = await fetch('/api/save-map', {
@@ -1192,7 +1321,7 @@
       if (!svgEl) return;
       
       loader.classList.add('visible');
-      deselectRect();
+      deselectPoly();
       setTimeout(() => {
         try {
           const textElements = svgEl.querySelectorAll('text');
@@ -1274,7 +1403,7 @@
       if (!svgEl) return;
       
       loader.classList.add('visible');
-      deselectRect();
+      deselectPoly();
       setTimeout(() => {
         try {
           const paths = svgEl.querySelectorAll('path');
@@ -1305,8 +1434,8 @@
     // Pan & Drag viewer movement
     viewer.addEventListener('mousedown', (e) => {
       if (activeTool === 'paint' && e.target.closest('path')) return;
-      if (activeTool === 'blocks' && e.target.closest('.custom-rect')) return;
-      if (activeTool === 'blocks' && e.target === resizeHandle) return;
+      if (activeTool === 'draw' && e.target.closest('.custom-poly')) return;
+      if (activeTool === 'draw' && e.target.closest('#poly-handles-group')) return;
       if (e.target.closest('.controls') || e.target.closest('.legend-panel') || e.target.closest('.sidebar')) return;
       
       isDragging = true;
