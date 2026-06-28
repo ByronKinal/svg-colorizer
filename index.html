@@ -394,16 +394,17 @@
     .viewer-container.draw-active svg .custom-poly {
       cursor: move;
       pointer-events: auto !important;
+      vector-effect: non-scaling-stroke !important;
     }
 
     .viewer-container.draw-active svg .custom-poly:hover {
       stroke: #f97316 !important;
-      stroke-width: 4px !important;
+      stroke-width: 3px !important;
     }
 
     .viewer-container.draw-active svg .custom-poly.selected {
       stroke: #38bdf8 !important;
-      stroke-width: 5px !important;
+      stroke-width: 3px !important;
     }
 
     /* Floating Controls */
@@ -867,6 +868,17 @@
     // Update transform without will-change:transform for vector sharpness
     function updateTransform() {
       canvas.style.transform = `translate(${currentX}px, ${currentY}px) scale(${currentScale})`;
+      
+      // Dynamically adjust handle sizes to stay constant on screen
+      if (handlesGroup) {
+        const handles = handlesGroup.querySelectorAll('circle');
+        const r = Math.max(3, 6 / currentScale);
+        const sw = Math.max(1, 2 / currentScale);
+        handles.forEach(h => {
+          h.setAttribute('r', r);
+          h.setAttribute('stroke-width', sw);
+        });
+      }
     }
 
     // Level selector click handler
@@ -1052,14 +1064,17 @@
       handlesGroup.innerHTML = '';
       
       const pts = getPathPoints(selectedPoly);
+      const r = Math.max(3, 6 / currentScale);
+      const sw = Math.max(1, 2 / currentScale);
+      
       pts.forEach((p, idx) => {
         const handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         handle.setAttribute('cx', p.x);
         handle.setAttribute('cy', p.y);
-        handle.setAttribute('r', '8'); // 8px absolute size
+        handle.setAttribute('r', r);
         handle.setAttribute('fill', '#ffffff');
         handle.setAttribute('stroke', '#38bdf8');
-        handle.setAttribute('stroke-width', '3');
+        handle.setAttribute('stroke-width', sw);
         handle.setAttribute('style', 'cursor: pointer; pointer-events: auto;');
         handle.setAttribute('data-index', idx);
         
@@ -1586,7 +1601,7 @@
       const cy = (mouseY - currentY) / currentScale;
 
       if (e.deltaY < 0) {
-        currentScale = Math.min(currentScale * zoomFactor, 5);
+        currentScale = Math.min(currentScale * zoomFactor, 25);
       } else {
         currentScale = Math.max(currentScale / zoomFactor, 0.05);
       }
@@ -1599,7 +1614,7 @@
 
     // Zoom Buttons
     document.getElementById('zoom-in').addEventListener('click', () => {
-      currentScale = Math.min(currentScale * 1.2, 5);
+      currentScale = Math.min(currentScale * 1.2, 25);
       updateTransform();
     });
 
