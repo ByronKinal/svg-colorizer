@@ -1,0 +1,11 @@
+{
+  "name": "svg-colorizer",
+  "version": "1.0.0",
+  "description": "Colorize SVG floor plans and remove layout borders/title blocks",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Antigravity",
+  "license": "ISC"
+}
