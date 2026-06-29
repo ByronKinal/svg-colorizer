@@ -948,7 +948,7 @@
             }
           });
           
-          setupBlocksContainer(svgEl);
+          setupLayers(svgEl);
         }
         
         resetView();
@@ -1234,16 +1234,57 @@
       }
     });
 
-    // Setup blocks container layer inside SVG structure
-    function setupBlocksContainer(svgEl) {
+    // Setup 3-layer rendering system inside SVG structure
+    function setupLayers(svgEl) {
+      // Find main AutoCAD drawing group
+      const mainGroup = svgEl.querySelector('g:not(#custom-color-blocks):not(#poly-handles-group):not(#autocad-outlines)');
+      if (!mainGroup) return;
+
+      // Remove existing outlines group if any
+      const existingOutlines = svgEl.querySelector('#autocad-outlines');
+      if (existingOutlines) {
+        existingOutlines.remove();
+      }
+
+      // 1. Setup Custom Blocks Container in the middle (on top of fills, but under outlines)
       let blockGroup = svgEl.querySelector('#custom-color-blocks');
       if (!blockGroup) {
         blockGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         blockGroup.setAttribute('id', 'custom-color-blocks');
-        svgEl.insertBefore(blockGroup, svgEl.querySelector('g'));
+        svgEl.insertBefore(blockGroup, mainGroup.nextSibling);
+      } else {
+        // Ensure it's positioned after mainGroup
+        if (blockGroup.previousSibling !== mainGroup) {
+          svgEl.insertBefore(blockGroup, mainGroup.nextSibling);
+        }
       }
 
-      // Mark any existing paths as custom-poly
+      // 2. Clone mainGroup to create the top outlines layer
+      const outlinesGroup = mainGroup.cloneNode(true);
+      outlinesGroup.setAttribute('id', 'autocad-outlines');
+      
+      // Remove any block group clone inside it
+      const nestedBlocks = outlinesGroup.querySelector('#custom-color-blocks');
+      if (nestedBlocks) nestedBlocks.remove();
+
+      // Append outlines layer at the very end (top layer)
+      svgEl.appendChild(outlinesGroup);
+
+      // Clean the outlines layer to hide pure background fills (so custom blocks show through!)
+      const shapes = outlinesGroup.querySelectorAll('path, rect, polygon, circle, ellipse, polyline');
+      shapes.forEach(shape => {
+        const computedStyle = window.getComputedStyle(shape);
+        const stroke = computedStyle.stroke;
+        const fill = computedStyle.fill;
+        const hasStroke = stroke && stroke !== 'none' && stroke !== '';
+        const hasFill = fill && fill !== 'none' && fill !== '';
+        
+        if (hasFill && !hasStroke) {
+          shape.style.setProperty('display', 'none', 'important');
+        }
+      });
+
+      // Mark custom-poly elements
       const paths = blockGroup.querySelectorAll('path');
       paths.forEach(p => {
         p.classList.add('custom-poly');
@@ -1252,7 +1293,7 @@
         }
       });
 
-      // Create handle layer
+      // Setup handles layer inside blockGroup
       let handles = blockGroup.querySelector('#poly-handles-group');
       if (!handles) {
         handles = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -1627,13 +1668,22 @@
       deselectPoly(); // Hide handles before saving
       cancelDrawing();
       
+      // Temporarily remove the outlines layer to keep file clean and small!
+      const outlines = svgEl.querySelector('#autocad-outlines');
+      if (outlines) outlines.remove();
+      
+      const svgString = svgEl.outerHTML;
+      
+      // Recreate immediately so user doesn't see a flash or lose outlines
+      setupLayers(svgEl);
+      
       try {
         const response = await fetch('/api/save-map', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             filename: currentFilename,
-            svg: svgEl.outerHTML
+            svg: svgString
           })
         });
         
@@ -1657,7 +1707,14 @@
       
       deselectPoly(); // Hide selection outline/handles before exporting
       
+      // Temporarily remove the outlines layer to keep file clean and small!
+      const outlines = svgEl.querySelector('#autocad-outlines');
+      if (outlines) outlines.remove();
+      
       const svgString = svgEl.outerHTML;
+      
+      setupLayers(svgEl);
+      
       const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       
@@ -1717,7 +1774,7 @@
             }
           });
           
-          setupBlocksContainer(svgEl);
+          setupLayers(svgEl);
         }
         resetView();
         
