@@ -643,6 +643,28 @@
             <input type="range" id="rect-opacity-input" min="0.1" max="1.0" step="0.05" value="0.7" style="width: 100%; cursor: pointer;">
           </div>
           
+          <!-- Textures section -->
+          <div style="border-top: 1px solid var(--panel-border); padding-top: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem;">
+            <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Texturas de la Figura:</label>
+            
+            <button class="action-btn" id="upload-texture-btn" style="background: #0284c7; width: 100%;" type="button" title="Subir una imagen (.jpg, .png) de tu computadora para usarla como textura">
+              <span>📤 Subir Textura</span>
+            </button>
+            <input type="file" id="texture-file-input" accept="image/*" style="display: none;">
+            
+            <!-- Texture scale slider, shown only when active texture is selected -->
+            <div id="texture-scale-container" style="display: none; margin-top: 0.2rem;">
+              <label style="font-size: 0.7rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+                <span>Escala Textura:</span>
+                <strong id="texture-scale-val">100px</strong>
+              </label>
+              <input type="range" id="texture-scale-input" min="10" max="500" step="5" value="100" style="width: 100%; cursor: pointer;">
+            </div>
+
+            <!-- Uploaded textures library -->
+            <div id="uploaded-textures-grid" style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.2rem;"></div>
+          </div>
+          
           <div class="helper-text">
             👉 Haz clic en **➕ Crear Cuadrado** para añadir un bloque.<br>
             👉 Arrastra los puntos celestes para ajustar la forma al plano.<br>
@@ -789,6 +811,13 @@
     const deleteRectBtn = document.getElementById('delete-rect-btn');
     const rectOpacityInput = document.getElementById('rect-opacity-input');
     const opacityValSpan = document.getElementById('opacity-val');
+
+    const uploadTextureBtn = document.getElementById('upload-texture-btn');
+    const textureFileInput = document.getElementById('texture-file-input');
+    const textureScaleContainer = document.getElementById('texture-scale-container');
+    const textureScaleInput = document.getElementById('texture-scale-input');
+    const textureScaleVal = document.getElementById('texture-scale-val');
+    const uploadedTexturesGrid = document.getElementById('uploaded-textures-grid');
 
     let isPolyLocked = false;
     let isAddingPointMode = false;
@@ -1005,6 +1034,16 @@
         sw.classList.add('selected');
         activePaintColor = sw.dataset.color;
         
+        // Deselect texture swatches
+        if (uploadedTexturesGrid) {
+          uploadedTexturesGrid.querySelectorAll('.texture-swatch').forEach(s => {
+            s.style.borderColor = 'transparent';
+          });
+        }
+        if (textureScaleContainer) {
+          textureScaleContainer.style.display = 'none';
+        }
+        
         if (activeTool === 'draw' && selectedPoly) {
           selectedPoly.setAttribute('fill', activePaintColor);
         }
@@ -1014,6 +1053,16 @@
     customColorInput.addEventListener('input', (e) => {
       swatches.forEach(s => s.classList.remove('selected'));
       activePaintColor = e.target.value;
+      
+      // Deselect texture swatches
+      if (uploadedTexturesGrid) {
+        uploadedTexturesGrid.querySelectorAll('.texture-swatch').forEach(s => {
+          s.style.borderColor = 'transparent';
+        });
+      }
+      if (textureScaleContainer) {
+        textureScaleContainer.style.display = 'none';
+      }
       
       if (activeTool === 'draw' && selectedPoly) {
         selectedPoly.setAttribute('fill', activePaintColor);
@@ -1028,6 +1077,125 @@
       
       if (selectedPoly) {
         selectedPoly.setAttribute('fill-opacity', val);
+      }
+    });
+
+    // Trigger local file selection when clicking Upload Texture
+    uploadTextureBtn.addEventListener('click', () => {
+      textureFileInput.click();
+    });
+
+    // Handle texture file upload
+    textureFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const base64Data = evt.target.result;
+        
+        const svgEl = canvas.querySelector('svg');
+        if (!svgEl) return;
+
+        // Ensure defs element exists in SVG
+        let defs = svgEl.querySelector('defs');
+        if (!defs) {
+          defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+          svgEl.insertBefore(defs, svgEl.firstChild);
+        }
+
+        // Generate unique pattern ID
+        const patternId = 'pattern-texture-' + Date.now();
+        const tileSize = 100; // Default tile size
+
+        // Create SVG Pattern
+        const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+        pattern.setAttribute('id', patternId);
+        pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+        pattern.setAttribute('width', tileSize);
+        pattern.setAttribute('height', tileSize);
+
+        // Create image tag inside pattern
+        const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+        image.setAttribute('href', base64Data);
+        image.setAttribute('x', '0');
+        image.setAttribute('y', '0');
+        image.setAttribute('width', tileSize);
+        image.setAttribute('height', tileSize);
+
+        pattern.appendChild(image);
+        defs.appendChild(pattern);
+
+        // Add to uploaded textures grid in sidebar
+        const swatch = document.createElement('div');
+        swatch.className = 'texture-swatch';
+        swatch.style.width = '40px';
+        swatch.style.height = '40px';
+        swatch.style.borderRadius = '4px';
+        swatch.style.border = '2px solid transparent';
+        swatch.style.backgroundImage = `url(${base64Data})`;
+        swatch.style.backgroundSize = 'cover';
+        swatch.style.cursor = 'pointer';
+        swatch.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+        swatch.dataset.patternId = patternId;
+
+        // Swatch click listener
+        swatch.addEventListener('click', () => {
+          // Deselect standard swatches
+          swatches.forEach(s => s.classList.remove('selected'));
+          // Deselect other texture swatches
+          uploadedTexturesGrid.querySelectorAll('.texture-swatch').forEach(s => {
+            s.style.borderColor = 'transparent';
+          });
+          swatch.style.borderColor = '#38bdf8'; // Blue selection border
+
+          activePaintColor = `url(#${patternId})`;
+
+          if (selectedPoly) {
+            selectedPoly.setAttribute('fill', activePaintColor);
+            selectedPoly.removeAttribute('style'); // Clear inline styles
+            selectedPoly.setAttribute('style', 'stroke:none;');
+            
+            // Show scale slider
+            textureScaleInput.value = pattern.getAttribute('width');
+            textureScaleVal.textContent = pattern.getAttribute('width') + 'px';
+            textureScaleContainer.style.display = 'block';
+          }
+        });
+
+        uploadedTexturesGrid.appendChild(swatch);
+
+        // Automatically trigger click on the new texture swatch to apply it to selected shape
+        swatch.click();
+      };
+      
+      reader.readAsDataURL(file);
+      // Reset input value to allow uploading same file again
+      textureFileInput.value = '';
+    });
+
+    // Texture scale slider handler
+    textureScaleInput.addEventListener('input', (e) => {
+      const val = e.target.value;
+      textureScaleVal.textContent = val + 'px';
+
+      if (!selectedPoly) return;
+      const fill = selectedPoly.getAttribute('fill') || '';
+      if (fill.startsWith('url(#pattern-')) {
+        const patternId = fill.substring(5, fill.length - 1);
+        const svgEl = canvas.querySelector('svg');
+        if (svgEl) {
+          const pattern = svgEl.querySelector('#' + patternId);
+          if (pattern) {
+            pattern.setAttribute('width', val);
+            pattern.setAttribute('height', val);
+            const img = pattern.querySelector('image');
+            if (img) {
+              img.setAttribute('width', val);
+              img.setAttribute('height', val);
+            }
+          }
+        }
       }
     });
 
@@ -1104,6 +1272,23 @@
           s.classList.remove('selected');
         }
       });
+      
+      // Check if it has a texture pattern to show the scale slider
+      if (fill.startsWith('url(#pattern-')) {
+        const patternId = fill.substring(5, fill.length - 1);
+        const svgEl = canvas.querySelector('svg');
+        if (svgEl) {
+          const pattern = svgEl.querySelector('#' + patternId);
+          if (pattern) {
+            const width = pattern.getAttribute('width') || '100';
+            textureScaleInput.value = width;
+            textureScaleVal.textContent = width + 'px';
+            textureScaleContainer.style.display = 'block';
+          }
+        }
+      } else {
+        textureScaleContainer.style.display = 'none';
+      }
     }
 
     // Deselect shape
@@ -1117,6 +1302,9 @@
       }
       if (addPointBtn) {
         addPointBtn.style.display = 'none';
+      }
+      if (textureScaleContainer) {
+        textureScaleContainer.style.display = 'none';
       }
       isAddingPointMode = false;
       updateAddPointButtonState();
