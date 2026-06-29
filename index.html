@@ -791,6 +791,7 @@
     const opacityValSpan = document.getElementById('opacity-val');
 
     let isPolyLocked = false;
+    let isAddingPointMode = false;
 
     // Pan / Zoom view state
     let currentScale = 1;
@@ -1085,6 +1086,21 @@
       if (addPointBtn) {
         addPointBtn.style.display = 'none';
       }
+      isAddingPointMode = false;
+      updateAddPointButtonState();
+    }
+
+    function updateAddPointButtonState() {
+      if (!addPointBtn) return;
+      if (isAddingPointMode) {
+        addPointBtn.style.backgroundColor = '#f59e0b'; // Amber
+        addPointBtn.innerHTML = '<span>🎯 Clic en el Borde</span>';
+        viewer.style.cursor = 'cell';
+      } else {
+        addPointBtn.style.backgroundColor = '#10b981'; // Green
+        addPointBtn.innerHTML = '<span>➕ Añadir Punto a Forma</span>';
+        viewer.style.cursor = '';
+      }
     }
 
     function cancelDrawing() {
@@ -1167,6 +1183,8 @@
       if (activeTool !== 'draw') return;
       if (e.target.closest('.sidebar') || e.target.closest('.controls') || e.target.closest('.legend-panel')) return;
       
+      if (!isAddingPointMode) return;
+      
       // Calculate local mouse click coordinate inside SVG sheet
       const rect = canvas.getBoundingClientRect();
       const x = (e.clientX - rect.left) / currentScale;
@@ -1201,11 +1219,22 @@
               pts.splice(i + 1, 0, { x, y });
               setPathPoints(selectedPoly, pts);
               renderPolyHandles();
+              
+              isAddingPointMode = false;
+              updateAddPointButtonState();
+              
+              toast.textContent = 'Punto añadido con éxito.';
+              toast.classList.add('visible');
+              setTimeout(() => toast.classList.remove('visible'), 2000);
               return;
             }
           }
         }
       }
+      
+      // Cancel mode if they clicked outside the border
+      isAddingPointMode = false;
+      updateAddPointButtonState();
     });
 
     // Explicit Crear Cuadrado button handler
@@ -1290,21 +1319,12 @@
     });
 
     // Explicit Add Point button handler
-    addPointBtn.addEventListener('click', () => {
+    addPointBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
       if (!selectedPoly) return;
-      const pts = getPathPoints(selectedPoly);
-      if (pts.length >= 2) {
-        // Insert a new point at the midpoint of the first segment
-        const midX = (pts[0].x + pts[1].x) / 2;
-        const midY = (pts[0].y + pts[1].y) / 2;
-        pts.splice(1, 0, { x: midX, y: midY });
-        setPathPoints(selectedPoly, pts);
-        renderPolyHandles();
-        
-        toast.textContent = 'Punto añadido. Arrástralo.';
-        toast.classList.add('visible');
-        setTimeout(() => toast.classList.remove('visible'), 2500);
-      }
+      
+      isAddingPointMode = !isAddingPointMode;
+      updateAddPointButtonState();
     });
 
     // Move/Resize mouse movements
