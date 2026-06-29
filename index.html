@@ -825,6 +825,8 @@
     
     let startMouseX = 0;
     let startMouseY = 0;
+    let startSVGX = 0;
+    let startSVGY = 0;
     let polyStartPoints = [];
 
     // Helper functions to parse and format path point coordinates
@@ -846,6 +848,36 @@
       }
       d += ' Z';
       pathEl.setAttribute('d', d);
+    }
+
+    function getSVGPoint(clientX, clientY) {
+      const svgEl = canvas.querySelector('svg');
+      if (!svgEl) return { x: 0, y: 0 };
+      const pt = svgEl.createSVGPoint();
+      pt.x = clientX;
+      pt.y = clientY;
+      try {
+        const svgPt = pt.matrixTransform(svgEl.getScreenCTM().inverse());
+        return { x: svgPt.x, y: svgPt.y };
+      } catch (e) {
+        // Fallback if matrix is singular or not loaded yet
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: (clientX - rect.left) / currentScale,
+          y: (clientY - rect.top) / currentScale
+        };
+      }
+    }
+
+    function getSVGScale() {
+      const svgEl = canvas.querySelector('svg');
+      if (!svgEl) return currentScale;
+      try {
+        const ctm = svgEl.getScreenCTM();
+        return Math.hypot(ctm.a, ctm.b);
+      } catch (e) {
+        return currentScale;
+      }
     }
 
     // Load active SVG
@@ -1135,6 +1167,9 @@
           activeVertexIndex = idx;
           startMouseX = e.clientX;
           startMouseY = e.clientY;
+          const svgPt = getSVGPoint(e.clientX, e.clientY);
+          startSVGX = svgPt.x;
+          startSVGY = svgPt.y;
           polyStartPoints = getPathPoints(selectedPoly);
         });
 
@@ -1161,9 +1196,9 @@
       if (activeTool !== 'draw') return;
       if (e.target.closest('.sidebar') || e.target.closest('.controls') || e.target.closest('.legend-panel')) return;
       
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / currentScale;
-      const y = (e.clientY - rect.top) / currentScale;
+      const svgPt = getSVGPoint(e.clientX, e.clientY);
+      const x = svgPt.x;
+      const y = svgPt.y;
 
       // If we are in "Add Point mode", check border click immediately!
       if (isAddingPointMode && selectedPoly && !e.target.closest('#poly-handles-group')) {
@@ -1187,7 +1222,7 @@
             const dist = Math.hypot(x - projX, y - projY);
             
             // Scale-independent threshold (24 screen pixels for easy click targeting)
-            const threshold = 24 / currentScale;
+            const threshold = 24 / getSVGScale();
             if (dist < threshold) {
               e.preventDefault();
               e.stopPropagation();
@@ -1223,6 +1258,8 @@
           isDraggingPoly = true;
           startMouseX = e.clientX;
           startMouseY = e.clientY;
+          startSVGX = x;
+          startSVGY = y;
           polyStartPoints = getPathPoints(selectedPoly);
         }
       } else if (!e.target.closest('#poly-handles-group')) {
@@ -1323,15 +1360,11 @@
 
     // Move/Resize mouse movements
     viewer.addEventListener('pointermove', (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / currentScale;
-      const y = (e.clientY - rect.top) / currentScale;
-
       if (activeTool !== 'draw' || !selectedPoly) return;
       
-      // Calculate delta in absolute SVG viewport space
-      const dx = (e.clientX - startMouseX) / currentScale;
-      const dy = (e.clientY - startMouseY) / currentScale;
+      const svgPt = getSVGPoint(e.clientX, e.clientY);
+      const dx = svgPt.x - startSVGX;
+      const dy = svgPt.y - startSVGY;
       
       if (isDraggingPoly) {
         e.preventDefault();
