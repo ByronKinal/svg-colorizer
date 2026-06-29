@@ -407,6 +407,10 @@
       stroke-width: 3px !important;
     }
 
+    .viewer-container.draw-active svg .custom-poly.locked {
+      cursor: default !important;
+    }
+
     /* Floating Controls */
     .controls {
       position: absolute;
@@ -621,6 +625,11 @@
             <span>➕ Crear Cuadrado</span>
           </button>
 
+          <!-- Lock/unlock shapes editing movement -->
+          <button class="action-btn" id="lock-poly-btn" style="background: #e11d48; width: 100%; margin-bottom: 0.25rem; font-weight: 600;" title="Bloquear movimiento y edición de las figuras para poder mover el mapa sin alterarlas">
+            <span>🔒 Bloquear Figuras</span>
+          </button>
+
           <!-- Explicit button to add a point to the currently selected shape -->
           <button class="action-btn" id="add-point-btn" style="background: #10b981; width: 100%; margin-bottom: 0.25rem; display: none;" title="Añadir un nuevo punto de control al polígono seleccionado">
             <span>➕ Añadir Punto a Forma</span>
@@ -776,9 +785,12 @@
     // Draw specific controls
     const addPolyBtn = document.getElementById('add-poly-btn');
     const addPointBtn = document.getElementById('add-point-btn');
+    const lockPolyBtn = document.getElementById('lock-poly-btn');
     const deleteRectBtn = document.getElementById('delete-rect-btn');
     const rectOpacityInput = document.getElementById('rect-opacity-input');
     const opacityValSpan = document.getElementById('opacity-val');
+
+    let isPolyLocked = false;
 
     // Pan / Zoom view state
     let currentScale = 1;
@@ -841,6 +853,12 @@
       loader.classList.add('visible');
       deselectPoly();
       cancelDrawing();
+      
+      isPolyLocked = false;
+      if (lockPolyBtn) {
+        lockPolyBtn.innerHTML = '<span>🔒 Bloquear Figuras</span>';
+        lockPolyBtn.style.backgroundColor = '#e11d48';
+      }
       try {
         const response = await fetch(`/api/maps/${filename}`);
         if (!response.ok) throw new Error('Error al cargar plano');
@@ -1013,6 +1031,9 @@
       const paths = blockGroup.querySelectorAll('path');
       paths.forEach(p => {
         p.classList.add('custom-poly');
+        if (isPolyLocked) {
+          p.classList.add('locked');
+        }
       });
 
       // Create handle layer
@@ -1125,15 +1146,16 @@
       
       const poly = e.target.closest('.custom-poly');
       if (poly) {
-        e.preventDefault();
-        e.stopPropagation();
-        
         selectPoly(poly);
         
-        isDraggingPoly = true;
-        startMouseX = e.clientX;
-        startMouseY = e.clientY;
-        polyStartPoints = getPathPoints(selectedPoly);
+        if (!isPolyLocked) {
+          e.preventDefault();
+          e.stopPropagation();
+          isDraggingPoly = true;
+          startMouseX = e.clientX;
+          startMouseY = e.clientY;
+          polyStartPoints = getPathPoints(selectedPoly);
+        }
       } else if (!e.target.closest('#poly-handles-group')) {
         // Deselect if clicking outside shapes
         deselectPoly();
@@ -1194,6 +1216,15 @@
       const blockGroup = svgEl.querySelector('#custom-color-blocks');
       if (!blockGroup) return;
       
+      // Auto-unlock figures when creating a new one so user can adjust it
+      isPolyLocked = false;
+      if (lockPolyBtn) {
+        lockPolyBtn.innerHTML = '<span>🔒 Bloquear Figuras</span>';
+        lockPolyBtn.style.backgroundColor = '#e11d48';
+      }
+      const polys = canvas.querySelectorAll('.custom-poly');
+      polys.forEach(p => p.classList.remove('locked'));
+      
       deselectPoly();
       
       // Determine center of current viewport in absolute coordinate space
@@ -1234,6 +1265,26 @@
       selectPoly(newPath);
       
       toast.textContent = 'Bloque cuadrado creado. Arrastra sus esquinas.';
+      toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), 2500);
+    });
+
+    // Lock/Unlock figures editing movement
+    lockPolyBtn.addEventListener('click', () => {
+      isPolyLocked = !isPolyLocked;
+      
+      const polys = canvas.querySelectorAll('.custom-poly');
+      if (isPolyLocked) {
+        polys.forEach(p => p.classList.add('locked'));
+        lockPolyBtn.innerHTML = '<span>🔓 Desbloquear Cuerpo</span>';
+        lockPolyBtn.style.backgroundColor = '#10b981'; // Green
+        toast.textContent = 'Cuerpo de figuras bloqueado. Usa las esquinas para editarlas.';
+      } else {
+        polys.forEach(p => p.classList.remove('locked'));
+        lockPolyBtn.innerHTML = '<span>🔒 Bloquear Cuerpo</span>';
+        lockPolyBtn.style.backgroundColor = '#e11d48'; // Red
+        toast.textContent = 'Figuras desbloqueadas. Puedes moverlas completas.';
+      }
       toast.classList.add('visible');
       setTimeout(() => toast.classList.remove('visible'), 2500);
     });
@@ -1383,6 +1434,11 @@
       if (!file) return;
       
       currentFilename = file.name;
+      isPolyLocked = false;
+      if (lockPolyBtn) {
+        lockPolyBtn.innerHTML = '<span>🔒 Bloquear Figuras</span>';
+        lockPolyBtn.style.backgroundColor = '#e11d48';
+      }
       
       const reader = new FileReader();
       reader.onload = (evt) => {
@@ -1565,7 +1621,7 @@
     // Pan & Drag viewer movement
     viewer.addEventListener('mousedown', (e) => {
       if (activeTool === 'paint' && e.target.closest('path')) return;
-      if (activeTool === 'draw' && e.target.closest('.custom-poly')) return;
+      if (activeTool === 'draw' && e.target.closest('.custom-poly') && !isPolyLocked) return;
       if (activeTool === 'draw' && e.target.closest('#poly-handles-group')) return;
       if (e.target.closest('.controls') || e.target.closest('.legend-panel') || e.target.closest('.sidebar')) return;
       
