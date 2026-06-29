@@ -1193,8 +1193,8 @@
             const projY = ay + t * dy;
             const dist = Math.hypot(x - projX, y - projY);
             
-            // Scale-independent threshold (12 screen pixels)
-            const threshold = 12 / currentScale;
+            // Scale-independent threshold (24 screen pixels for easy click targeting)
+            const threshold = 24 / currentScale;
             if (dist < threshold) {
               e.preventDefault();
               e.stopPropagation();
