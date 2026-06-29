@@ -1159,39 +1159,14 @@
     // Handle clicks/selections on canvas
     viewer.addEventListener('pointerdown', (e) => {
       if (activeTool !== 'draw') return;
-      
-      const poly = e.target.closest('.custom-poly');
-      if (poly) {
-        selectPoly(poly);
-        
-        if (!isPolyLocked) {
-          e.preventDefault();
-          e.stopPropagation();
-          isDraggingPoly = true;
-          startMouseX = e.clientX;
-          startMouseY = e.clientY;
-          polyStartPoints = getPathPoints(selectedPoly);
-        }
-      } else if (!e.target.closest('#poly-handles-group')) {
-        // Deselect if clicking outside shapes
-        deselectPoly();
-      }
-    });
-
-    // Handle clicks on canvas to insert new vertices on segment borders
-    viewer.addEventListener('click', (e) => {
-      if (activeTool !== 'draw') return;
       if (e.target.closest('.sidebar') || e.target.closest('.controls') || e.target.closest('.legend-panel')) return;
       
-      if (!isAddingPointMode) return;
-      
-      // Calculate local mouse click coordinate inside SVG sheet
       const rect = canvas.getBoundingClientRect();
       const x = (e.clientX - rect.left) / currentScale;
       const y = (e.clientY - rect.top) / currentScale;
-      
-      // If a polygon is selected and we click on its border, ADD a new vertex point!
-      if (selectedPoly && !e.target.closest('#poly-handles-group')) {
+
+      // If we are in "Add Point mode", check border click immediately!
+      if (isAddingPointMode && selectedPoly && !e.target.closest('#poly-handles-group')) {
         const pts = getPathPoints(selectedPoly);
         if (pts.length >= 3) {
           for (let i = 0; i < pts.length; i++) {
@@ -1230,11 +1205,30 @@
             }
           }
         }
+        
+        // If they clicked outside the border while in mode, cancel it
+        isAddingPointMode = false;
+        updateAddPointButtonState();
+        return;
       }
       
-      // Cancel mode if they clicked outside the border
-      isAddingPointMode = false;
-      updateAddPointButtonState();
+      // Regular selection / dragging logic
+      const poly = e.target.closest('.custom-poly');
+      if (poly) {
+        selectPoly(poly);
+        
+        if (!isPolyLocked) {
+          e.preventDefault();
+          e.stopPropagation();
+          isDraggingPoly = true;
+          startMouseX = e.clientX;
+          startMouseY = e.clientY;
+          polyStartPoints = getPathPoints(selectedPoly);
+        }
+      } else if (!e.target.closest('#poly-handles-group')) {
+        // Deselect if clicking outside shapes
+        deselectPoly();
+      }
     });
 
     // Explicit Crear Cuadrado button handler
