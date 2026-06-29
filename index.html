@@ -933,27 +933,18 @@
           svgEl.style.width = '100%';
           svgEl.style.height = '100%';
           
-          // Make all white filled paths in the AutoCAD drawing transparent
+          // Make all white filled shapes in the AutoCAD drawing transparent
           // (using fill-opacity="0" so they remain clickable inside, but let background blocks show through!)
-          const paths = svgEl.querySelectorAll('path');
-          paths.forEach(path => {
-            const fill = path.getAttribute('fill') || '';
-            const style = path.getAttribute('style') || '';
-            const isWhite = fill.toLowerCase() === '#ffffff' || 
-                            fill.toLowerCase() === 'white' || 
-                            fill.toLowerCase() === '#fff' ||
-                            style.toLowerCase().includes('fill:#ffffff') ||
-                            style.toLowerCase().includes('fill:white') ||
-                            style.toLowerCase().includes('fill:#fff');
-            if (isWhite && !path.classList.contains('custom-poly')) {
-              path.setAttribute('fill-opacity', '0');
-              let newStyle = style;
-              if (style.includes('fill-opacity:')) {
-                newStyle = style.replace(/fill-opacity:\s*[^;]+/, 'fill-opacity:0');
-              } else {
-                newStyle = style + ';fill-opacity:0;';
-              }
-              path.setAttribute('style', newStyle);
+          // We use window.getComputedStyle to detect white fills regardless of whether they are set via attributes or CSS classes!
+          const shapes = svgEl.querySelectorAll('path, rect, polygon, circle, ellipse, polyline');
+          shapes.forEach(shape => {
+            if (shape.classList.contains('custom-poly')) return;
+            const fillVal = window.getComputedStyle(shape).fill;
+            const isWhite = fillVal === 'rgb(255, 255, 255)' || 
+                            fillVal === '#ffffff' || 
+                            fillVal === 'white';
+            if (isWhite) {
+              shape.style.setProperty('fill-opacity', '0', 'important');
             }
           });
           
@@ -1711,26 +1702,18 @@
           svgEl.style.width = '100%';
           svgEl.style.height = '100%';
           
-          // Make all white filled paths in the AutoCAD drawing transparent
-          const paths = svgEl.querySelectorAll('path');
-          paths.forEach(path => {
-            const fill = path.getAttribute('fill') || '';
-            const style = path.getAttribute('style') || '';
-            const isWhite = fill.toLowerCase() === '#ffffff' || 
-                            fill.toLowerCase() === 'white' || 
-                            fill.toLowerCase() === '#fff' ||
-                            style.toLowerCase().includes('fill:#ffffff') ||
-                            style.toLowerCase().includes('fill:white') ||
-                            style.toLowerCase().includes('fill:#fff');
-            if (isWhite && !path.classList.contains('custom-poly')) {
-              path.setAttribute('fill-opacity', '0');
-              let newStyle = style;
-              if (style.includes('fill-opacity:')) {
-                newStyle = style.replace(/fill-opacity:\s*[^;]+/, 'fill-opacity:0');
-              } else {
-                newStyle = style + ';fill-opacity:0;';
-              }
-              path.setAttribute('style', newStyle);
+          // Make all white filled shapes in the AutoCAD drawing transparent
+          // (using fill-opacity="0" so they remain clickable inside, but let background blocks show through!)
+          // We use window.getComputedStyle to detect white fills regardless of whether they are set via attributes or CSS classes!
+          const shapes = svgEl.querySelectorAll('path, rect, polygon, circle, ellipse, polyline');
+          shapes.forEach(shape => {
+            if (shape.classList.contains('custom-poly')) return;
+            const fillVal = window.getComputedStyle(shape).fill;
+            const isWhite = fillVal === 'rgb(255, 255, 255)' || 
+                            fillVal === '#ffffff' || 
+                            fillVal === 'white';
+            if (isWhite) {
+              shape.style.setProperty('fill-opacity', '0', 'important');
             }
           });
           
