@@ -1270,7 +1270,7 @@
       // Append outlines layer at the very end (top layer)
       svgEl.appendChild(outlinesGroup);
 
-      // Clean the outlines layer to hide pure background fills (so custom blocks show through!)
+      // Clean the outlines layer to hide background fills but keep outlines/text
       const shapes = outlinesGroup.querySelectorAll('path, rect, polygon, circle, ellipse, polyline');
       shapes.forEach(shape => {
         const computedStyle = window.getComputedStyle(shape);
@@ -1278,8 +1278,14 @@
         const fill = computedStyle.fill;
         const hasStroke = stroke && stroke !== 'none' && stroke !== '';
         const hasFill = fill && fill !== 'none' && fill !== '';
+        const isBlackFill = fill === 'rgb(0, 0, 0)' || fill === '#000000' || fill === 'black';
         
-        if (hasFill && !hasStroke) {
+        if (hasStroke) {
+          // Keep the stroke but make the fill transparent so it doesn't cover blocks!
+          shape.style.setProperty('fill', 'none', 'important');
+          shape.style.setProperty('fill-opacity', '0', 'important');
+        } else if (hasFill && !isBlackFill) {
+          // Hide pure background fills
           shape.style.setProperty('display', 'none', 'important');
         }
       });
