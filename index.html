@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kinal Map Explorer & Editor</title>
-  <!-- Google Fonts: Outfit & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,570 +15,95 @@
       --panel-border: rgba(255, 255, 255, 0.08);
       --text-color: #f1f5f9;
       --text-muted: #94a3b8;
-      --accent-color: #f97316; /* Orange */
+      --accent-color: #f97316;
       --accent-glow: rgba(249, 115, 22, 0.4);
       --font-title: 'Outfit', sans-serif;
       --font-body: 'Inter', sans-serif;
-      
-      /* Canvas Background */
       --canvas-bg: #ffffff;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-
-    body {
-      font-family: var(--font-body);
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* Header */
-    header {
-      background: rgba(15, 23, 42, 0.6);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--panel-border);
-      padding: 1rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      z-index: 10;
-    }
-
-    header h1 {
-      font-family: var(--font-title);
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: linear-gradient(135deg, #f97316 0%, #ffedd5 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    header h1::before {
-      content: '';
-      display: inline-block;
-      width: 10px;
-      height: 20px;
-      background: var(--accent-color);
-      border-radius: 3px;
-      box-shadow: 0 0 10px var(--accent-glow);
-    }
-
-    .subtitle {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-
-    /* Main Layout */
-    .app-container {
-      flex: 1;
-      display: flex;
-      overflow: hidden;
-      position: relative;
-    }
-
-    /* Sidebar - Level Selector */
-    .sidebar {
-      width: 320px;
-      background: rgba(15, 23, 42, 0.4);
-      border-right: 1px solid var(--panel-border);
-      padding: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-      overflow-y: auto;
-      z-index: 5;
-    }
-
-    .sidebar h2 {
-      font-family: var(--font-title);
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 0.5rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      padding-bottom: 0.25rem;
-    }
-
-    .sidebar-section {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    /* Tool Buttons Group */
-    .tool-group {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.4rem;
-    }
-
-    .tool-btn {
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      border-radius: 10px;
-      padding: 0.75rem 0.25rem;
-      color: var(--text-color);
-      font-size: 0.8rem;
-      font-weight: 500;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 0.25rem;
-      transition: all 0.2s ease;
-    }
-
-    .tool-btn:hover {
-      border-color: rgba(249, 115, 22, 0.4);
-      background: rgba(255, 255, 255, 0.03);
-    }
-
-    .tool-btn.active {
-      background: var(--accent-color);
-      border-color: var(--accent-color);
-      box-shadow: 0 0 10px var(--accent-glow);
-    }
-
-    /* Action buttons */
-    .action-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.5rem;
-    }
-
-    .action-btn {
-      border: none;
-      color: #fff;
-      font-weight: 600;
-      padding: 0.75rem 0.5rem;
-      border-radius: 10px;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 0.4rem;
-      font-size: 0.85rem;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-
-    .btn-autocolor {
-      background: #f97316;
-    }
-    .btn-autocolor:hover {
-      background: #ea580c;
-    }
-
-    .btn-clear {
-      background: #475569;
-    }
-    .btn-clear:hover {
-      background: #334155;
-    }
-
-    .btn-save {
-      grid-column: span 2;
-      background: #10b981;
-      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
-      font-size: 0.95rem;
-      padding: 0.85rem;
-    }
-    .btn-save:hover {
-      background: #059669;
-      transform: translateY(-1px);
-    }
-
-    /* Unified Edit Panel */
-    .edit-panel {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      padding: 1rem;
-      display: none;
-      flex-direction: column;
-      gap: 0.75rem;
-      animation: fadeIn 0.2s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-5px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .edit-panel h3 {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-bottom: 0.25rem;
-    }
-
-    /* Swatches Grid */
-    .swatches-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0.5rem;
-    }
-
-    .swatch {
-      width: 44px;
-      height: 44px;
-      border-radius: 8px;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: all 0.2s ease;
-      position: relative;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-
-    .swatch:hover {
-      transform: scale(1.1);
-    }
-
-    .swatch.selected {
-      border-color: #fff;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-    }
-
-    .custom-swatch-picker {
-      width: 44px;
-      height: 44px;
-      border-radius: 8px;
-      cursor: pointer;
-      border: 2px solid transparent;
-      position: relative;
-      background: linear-gradient(135deg, red, orange, yellow, green, blue, purple);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .custom-swatch-picker input[type="color"] {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      opacity: 0;
-      cursor: pointer;
-    }
-
-    /* Level Selector Cards */
-    .level-card {
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      padding: 1.25rem;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .level-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 4px;
-      height: 100%;
-      background: transparent;
-      transition: background 0.3s ease;
-    }
-
-    .level-card:hover {
-      transform: translateY(-2px);
-      border-color: rgba(249, 115, 22, 0.3);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    }
-
-    .level-card.active {
-      border-color: var(--accent-color);
-      box-shadow: 0 0 15px var(--accent-glow);
-      background: rgba(30, 41, 59, 0.9);
-    }
-
-    .level-card.active::before {
-      background: var(--accent-color);
-    }
-
-    .level-title {
-      font-family: var(--font-title);
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: var(--text-color);
-    }
-
-    .level-desc {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-
-    /* Viewer Container */
-    .viewer-container {
-      flex: 1;
-      position: relative;
-      background-color: #080d1a;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-      cursor: grab;
-    }
-
-    .viewer-container:active {
-      cursor: grabbing;
-    }
-
-    .viewer-container.paint-active {
-      cursor: crosshair;
-    }
-
-    .viewer-container.draw-active {
-      cursor: crosshair;
-    }
-
-    .canvas-wrapper {
-      position: absolute;
-      transform-origin: 0 0;
-      user-select: none;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: var(--canvas-bg);
-      border-radius: 8px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      transition: background-color 0.3s ease;
-    }
-
-    .canvas-wrapper svg {
-      display: block;
-      width: auto;
-      height: auto;
-      max-width: 95vw;
-      max-height: 85vh;
-    }
-
-    .viewer-container.paint-active svg path {
-      pointer-events: auto;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+    body { font-family: var(--font-body); background-color: var(--bg-color); color: var(--text-color); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
     
-    .viewer-container.paint-active svg path:hover {
-      filter: brightness(1.2);
-      stroke: #f97316 !important;
-      stroke-width: 20px !important;
-    }
+    header { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border-bottom: 1px solid var(--panel-border); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+    header h1 { font-family: var(--font-title); font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; background: linear-gradient(135deg, #f97316 0%, #ffedd5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    header h1::before { content: ''; display: inline-block; width: 10px; height: 20px; background: var(--accent-color); border-radius: 3px; box-shadow: 0 0 10px var(--accent-glow); }
+    .subtitle { font-size: 0.85rem; color: var(--text-muted); }
 
-    /* Interactive Custom Polygons styling in draw mode */
-    .viewer-container.draw-active svg .custom-poly {
-      cursor: move;
-      pointer-events: auto !important;
-      vector-effect: non-scaling-stroke !important;
-    }
+    .app-container { flex: 1; display: flex; overflow: hidden; position: relative; }
+    
+    .sidebar { width: 320px; background: rgba(15, 23, 42, 0.4); border-right: 1px solid var(--panel-border); padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; overflow-y: auto; z-index: 5; }
+    .sidebar h2 { font-family: var(--font-title); font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.25rem; }
+    .sidebar-section { display: flex; flex-direction: column; gap: 0.5rem; }
+    
+    .tool-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
+    .tool-btn { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 10px; padding: 0.75rem 0.25rem; color: var(--text-color); font-size: 0.8rem; font-weight: 500; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; transition: all 0.2s ease; }
+    .tool-btn:hover { border-color: rgba(249, 115, 22, 0.4); background: rgba(255, 255, 255, 0.03); }
+    .tool-btn.active { background: var(--accent-color); border-color: var(--accent-color); box-shadow: 0 0 10px var(--accent-glow); }
 
-    .viewer-container.draw-active svg .custom-poly:hover {
-      stroke: #f97316 !important;
-      stroke-width: 3px !important;
-    }
+    .action-group { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .action-btn { border: none; color: #fff; font-weight: 600; padding: 0.75rem 0.5rem; border-radius: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 0.4rem; font-size: 0.85rem; transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+    .action-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
 
-    .viewer-container.draw-active svg .custom-poly.selected {
-      stroke: #38bdf8 !important;
-      stroke-width: 3px !important;
-    }
+    .btn-autocolor { background: #f97316; }
+    .btn-clear { background: #475569; }
+    .btn-save { background: #10b981; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
 
-    .viewer-container.draw-active svg .custom-poly.locked {
-      cursor: default !important;
-    }
+    .edit-panel { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--panel-border); border-radius: 12px; padding: 1rem; display: none; flex-direction: column; gap: 0.75rem; }
+    .edit-panel h3 { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.25rem; }
+    
+    .swatches-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
+    .swatch { width: 44px; height: 44px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s ease; }
+    .swatch:hover { transform: scale(1.1); }
+    .swatch.selected { border-color: #fff; box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+    
+    .custom-swatch-picker { width: 44px; height: 44px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; position: relative; background: linear-gradient(135deg, red, orange, yellow, green, blue, purple); display: flex; justify-content: center; align-items: center; }
+    .custom-swatch-picker input[type="color"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
-    /* Floating Controls */
-    .controls {
-      position: absolute;
-      top: 1.5rem;
-      right: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      z-index: 10;
-    }
+    .level-card { background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 12px; padding: 1.25rem; cursor: pointer; transition: all 0.3s; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+    .level-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: transparent; transition: background 0.3s ease; }
+    .level-card:hover { transform: translateY(-2px); border-color: rgba(249, 115, 22, 0.3); }
+    .level-card.active { border-color: var(--accent-color); background: rgba(30, 41, 59, 0.9); }
+    .level-card.active::before { background: var(--accent-color); }
+    .level-title { font-family: var(--font-title); font-size: 1.1rem; font-weight: 600; }
+    .level-desc { font-size: 0.8rem; color: var(--text-muted); }
 
-    .control-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      color: var(--text-color);
-      font-size: 1.25rem;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
+    .viewer-container { flex: 1; position: relative; background-color: #080d1a; display: flex; justify-content: center; align-items: center; overflow: hidden; cursor: grab; }
+    .viewer-container:active { cursor: grabbing; }
+    .viewer-container.paint-active { cursor: crosshair; }
+    .viewer-container.draw-active { cursor: crosshair; }
 
-    .control-btn:hover {
-      background: var(--accent-color);
-      border-color: var(--accent-color);
-      transform: scale(1.05);
-      box-shadow: 0 0 10px var(--accent-glow);
-    }
+    .canvas-wrapper { position: absolute; transform-origin: 0 0; user-select: none; display: flex; justify-content: center; align-items: center; background-color: var(--canvas-bg); border-radius: 8px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+    .canvas-wrapper svg { display: block; width: auto; height: auto; max-width: 95vw; max-height: 85vh; }
+    
+    .viewer-container.paint-active svg path { pointer-events: auto; }
+    .viewer-container.paint-active svg path:hover { filter: brightness(1.2); stroke: #f97316 !important; stroke-width: 20px !important; }
+    .viewer-container.draw-active svg .custom-poly { cursor: move; pointer-events: auto !important; vector-effect: non-scaling-stroke !important; }
+    .viewer-container.draw-active svg .custom-poly:hover { stroke: #f97316 !important; stroke-width: 3px !important; }
+    .viewer-container.draw-active svg .custom-poly.selected { stroke: #38bdf8 !important; stroke-width: 3px !important; }
+    .viewer-container.draw-active svg .custom-poly.locked { cursor: default !important; }
 
-    /* Alert toast */
-    .toast {
-      position: absolute;
-      top: 2rem;
-      left: 50%;
-      transform: translateX(-50%) translateY(-20px);
-      background: #10b981;
-      color: white;
-      padding: 0.75rem 2rem;
-      border-radius: 10px;
-      font-weight: 600;
-      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-      z-index: 30;
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+    .controls { position: absolute; top: 1.5rem; right: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; z-index: 10; }
+    .control-btn { width: 44px; height: 44px; border-radius: 10px; background: var(--panel-bg); border: 1px solid var(--panel-border); color: var(--text-color); font-size: 1.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(8px); transition: all 0.2s; }
+    .control-btn:hover { background: var(--accent-color); border-color: var(--accent-color); transform: scale(1.05); }
 
-    .toast.visible {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
+    .toast { position: absolute; top: 2rem; left: 50%; transform: translateX(-50%) translateY(-20px); background: #10b981; color: white; padding: 0.75rem 2rem; border-radius: 10px; font-weight: 600; z-index: 30; opacity: 0; pointer-events: none; transition: all 0.3s; }
+    .toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* Color Legend */
-    .legend-panel {
-      position: absolute;
-      bottom: 1.5rem;
-      left: 350px;
-      right: 1.5rem;
-      background: rgba(15, 23, 42, 0.75);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      padding: 1rem 1.5rem;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-around;
-      gap: 1rem;
-      z-index: 10;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    }
+    .loader { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); display: flex; justify-content: center; align-items: center; z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+    .loader.visible { opacity: 1; pointer-events: auto; }
+    .spinner { width: 50px; height: 50px; border: 3px solid rgba(249, 115, 22, 0.1); border-radius: 50%; border-top-color: var(--accent-color); animation: spin 1s ease-in-out infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
+    .helper-text { font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; background: rgba(255, 255, 255, 0.03); padding: 0.5rem; border-radius: 6px; border-left: 2px solid var(--accent-color); }
+    
+    #autocad-outlines { pointer-events: none !important; }
+    #autocad-outlines path, #autocad-outlines rect, #autocad-outlines polygon, #autocad-outlines circle, #autocad-outlines ellipse, #autocad-outlines polyline { fill: none !important; fill-opacity: 0 !important; }
 
-    .color-box {
-      width: 16px;
-      height: 16px;
-      border-radius: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    /* Loading overlay */
-    .loader {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(15, 23, 42, 0.8);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 20;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-    }
-
-    .loader.visible {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .spinner {
-      width: 50px;
-      height: 50px;
-      border: 3px solid rgba(249, 115, 22, 0.1);
-      border-radius: 50%;
-      border-top-color: var(--accent-color);
-      animation: spin 1s ease-in-out infinite;
-      box-shadow: 0 0 15px var(--accent-glow);
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Helper guide text */
-    .helper-text {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-      background: rgba(255, 255, 255, 0.03);
-      padding: 0.5rem;
-      border-radius: 6px;
-      border-left: 2px solid var(--accent-color);
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .app-container {
-        flex-direction: column-reverse;
-      }
-      .sidebar {
-        width: 100%;
-        height: 250px;
-        border-right: none;
-        border-top: 1px solid var(--panel-border);
-      }
-      .legend-panel {
-        left: 1.5rem;
-        bottom: 270px;
-      }
-    /* Outlines Layer Styling Override (Makes all background fills transparent, keeps strokes & text visible) */
-    #autocad-outlines {
-      pointer-events: none !important;
-    }
-    #autocad-outlines path, 
-    #autocad-outlines rect, 
-    #autocad-outlines polygon, 
-    #autocad-outlines circle, 
-    #autocad-outlines ellipse, 
-    #autocad-outlines polyline {
-      fill: none !important;
-      fill-opacity: 0 !important;
-    }
+    .ctx-menu { position: fixed; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 1000; padding: 0.5rem; display: none; flex-direction: column; gap: 0.25rem; min-width: 150px; }
+    .ctx-menu button { background: transparent; border: none; color: #fff; text-align: left; padding: 0.5rem; border-radius: 5px; cursor: pointer; font-size: 0.85rem; }
+    .ctx-menu button:hover { background: rgba(255,255,255,0.1); }
+    .ctx-menu .color-picker-row { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; font-size: 0.85rem; }
   </style>
 </head>
 <body>
@@ -592,200 +116,123 @@
   </header>
 
   <div class="app-container">
-    <!-- Sidebar tool & level selectors -->
     <div class="sidebar">
-      <!-- Mode/Tool Selector -->
-      <div class="sidebar-section">
-        <h2>Herramientas</h2>
-        <div class="tool-group">
-          <button class="tool-btn active" id="tool-pan" title="Mover la cámara">
-            <span>✋ Mover</span>
-          </button>
-          <button class="tool-btn" id="tool-paint" title="Pintar salones y espacios">
-            <span>🪣 Pintar</span>
-          </button>
-          <button class="tool-btn" id="tool-draw" title="Crear y editar bloques de colores libres">
-            <span>📐 Bloques</span>
-          </button>
-        </div>
+      <div class="sidebar-section action-group">
+        <button class="action-btn" id="download-btn" style="background: #3b82f6; grid-column: span 2; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);"><span>📥 Descargar</span></button>
+        <button class="action-btn" id="upload-btn" style="background: #a855f7; grid-column: span 2; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);"><span>📤 Subir Plano (.svg)</span></button>
+        <input type="file" id="file-uploader" accept=".svg" style="display: none;">
       </div>
 
-      <!-- Unified Edit Panel (Colors palette & custom options) -->
-      <div class="edit-panel" id="edit-panel">
+      <div class="edit-panel" id="edit-panel" style="display: flex;">
         <h3>Elegir Color</h3>
         <div class="swatches-grid">
-          <div class="swatch selected" style="background-color: #FFA500;" data-color="#FFA500" title="Salones (Naranja)"></div>
+          <div class="swatch selected" style="background-color: #FF7B00;" data-color="#FF7B00" title="Salones (Naranja)"></div>
           <div class="swatch" style="background-color: #1E90FF;" data-color="#1E90FF" title="Baños (Azul)"></div>
-          <div class="swatch" style="background-color: #FF4500;" data-color="#FF4500" title="Conexiones/Gradas (Rojo)"></div>
+          <div class="swatch" style="background-color: #FB1818;" data-color="#FB1818" title="Conexiones/Gradas (Rojo)"></div>
           <div class="swatch" style="background-color: #D3D3D3;" data-color="#D3D3D3" title="Concreto/Pasillos (Gris)"></div>
           <div class="swatch" style="background-color: #90EE90;" data-color="#90EE90" title="Césped/Jardines (Verde Claro)"></div>
           <div class="swatch" style="background-color: #228B22;" data-color="#228B22" title="Plantas/Maceteros (Verde Oscuro)"></div>
           <div class="swatch" style="background-color: #FFDAB9;" data-color="#FFDAB9" title="Suelo/Patio (Piel)"></div>
-          
-          <!-- Custom Color Picker -->
           <div class="custom-swatch-picker" title="Color Personalizado">
             <span>🎨</span>
-            <input type="color" id="custom-color-input" value="#ff00ff">
+            <input type="color" id="custom-color-input" value="FF7B00">
           </div>
         </div>
 
-        <!-- Custom Polygons specific options (Shown only when in draw mode) -->
-        <div id="draw-options" style="display: none; margin-top: 0.5rem; flex-direction: column; gap: 0.5rem;">
-          
-          <!-- Explicit Start/Add Polygon button to ensure they can draw new shapes even if one is selected -->
-          <button class="action-btn" id="add-poly-btn" style="background: #38bdf8; width: 100%; margin-bottom: 0.25rem;" title="Crear un nuevo cuadrado de color en el plano">
-            <span>➕ Crear Cuadrado</span>
-          </button>
+        <div style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">HEX:</label>
+          <input type="text" id="custom-color-hex" value="#FF7B00" style="background: rgba(15, 23, 42, 0.4); border: 1px solid var(--panel-border); color: white; padding: 0.4rem; border-radius: 6px; width: 100%; font-family: monospace; font-size: 0.85rem; outline: none;">
+        </div>
 
-          <!-- Lock/unlock shapes editing movement -->
-          <button class="action-btn" id="lock-poly-btn" style="background: #e11d48; width: 100%; margin-bottom: 0.25rem; font-weight: 600;" title="Bloquear movimiento y edición de las figuras para poder mover el mapa sin alterarlas">
+        <div id="draw-options" style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <button class="action-btn" id="add-poly-btn" style="background: #38bdf8;">
+              <span>📍 Polígono</span>
+            </button>
+            <button class="action-btn" id="add-square-btn" style="background: #a855f7;">
+              <span>🟥 Cuadrado</span>
+            </button>
+          </div>
+          <button class="action-btn" id="lock-poly-btn" style="background: #e11d48; width: 100%;">
             <span>🔒 Bloquear Figuras</span>
           </button>
 
-          <!-- Explicit button to add a point to the currently selected shape -->
-          <button class="action-btn" id="add-point-btn" style="background: #10b981; width: 100%; margin-bottom: 0.25rem; display: none;" title="Añadir un nuevo punto de control al polígono seleccionado">
-            <span>➕ Añadir Punto a Forma</span>
-          </button>
-
           <div style="border-top: 1px solid var(--panel-border); padding-top: 0.5rem;">
-            <label style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-              <span>Opacidad:</span>
-              <strong id="opacity-val">0.70</strong>
+            <label style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+              <span>Opacidad:</span><strong id="opacity-val">0.70</strong>
             </label>
             <input type="range" id="rect-opacity-input" min="0.1" max="1.0" step="0.05" value="0.7" style="width: 100%; cursor: pointer;">
           </div>
-          
-          <!-- Textures section -->
+
           <div style="border-top: 1px solid var(--panel-border); padding-top: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem;">
             <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Texturas de la Figura:</label>
-            
-            <button class="action-btn" id="upload-texture-btn" style="background: #0284c7; width: 100%;" type="button" title="Subir una imagen (.jpg, .png) de tu computadora para usarla como textura">
+            <button class="action-btn" id="upload-texture-btn" style="background: #0284c7; width: 100%;" type="button">
               <span>📤 Subir Textura</span>
             </button>
             <input type="file" id="texture-file-input" accept="image/*" style="display: none;">
             
-            <!-- Texture scale slider, shown only when active texture is selected -->
             <div id="texture-scale-container" style="display: none; margin-top: 0.2rem;">
               <label style="font-size: 0.7rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
-                <span>Escala Textura:</span>
-                <strong id="texture-scale-val">100px</strong>
+                <span>Escala Textura:</span><strong id="texture-scale-val">100px</strong>
               </label>
               <input type="range" id="texture-scale-input" min="10" max="500" step="5" value="100" style="width: 100%; cursor: pointer;">
             </div>
-
-            <!-- Uploaded textures library -->
             <div id="uploaded-textures-grid" style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.2rem;"></div>
           </div>
           
           <div class="helper-text">
-            👉 Haz clic en **➕ Crear Cuadrado** para añadir un bloque.<br>
-            👉 Arrastra los puntos celestes para ajustar la forma al plano.<br>
-            👉 Haz **clic sobre una línea** (o usa el botón verde) para añadir esquinas.<br>
-            👉 Doble clic en un punto celeste para eliminarlo.
+            👉 **Polígono:** Clics para poner puntos. Arrastra los puntos (incluso sin cerrarlo). Clic en el punto <span style="color: #ef4444; font-weight: bold;">rojo</span> para cerrar.<br>
+            👉 Doble clic en un borde para crear un punto nuevo, muévelo y haz un clic para fijarlo.<br>
+            👉 Doble clic en un punto para eliminarlo.
           </div>
-
-          <button class="action-btn" id="delete-rect-btn" style="background: #ef4444; width: 100%;" title="Eliminar la forma seleccionada">
-            <span>🗑️ Eliminar Forma</span>
-          </button>
         </div>
       </div>
 
-      <!-- Actions -->
-      <div class="sidebar-section action-group">
-        <button class="action-btn btn-autocolor" id="autocolor-btn" title="Colorear automáticamente basándose en los textos del plano">
-          <span>⚡ Autocolorear</span>
-        </button>
-        <button class="action-btn btn-clear" id="clear-btn" title="Limpiar todos los colores del plano">
-          <span>🧹 Limpiar</span>
-        </button>
-        <button class="action-btn btn-save" id="save-map-btn" title="Guardar cambios del plano en tu servidor">
-          <span>💾 Guardar</span>
-        </button>
-        <button class="action-btn" id="download-btn" style="background: #3b82f6; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);" title="Descargar plano SVG directamente a tu computadora">
-          <span>📥 Descargar</span>
-        </button>
-        <button class="action-btn" id="upload-btn" style="background: #a855f7; grid-column: span 2; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);" title="Subir un plano SVG de tu computadora para colorearlo">
-          <span>📤 Subir Plano (.svg)</span>
-        </button>
-        <input type="file" id="file-uploader" accept=".svg" style="display: none;">
-      </div>
-
-      <!-- Levels selection -->
       <div class="sidebar-section">
         <h2>Niveles</h2>
-        <div class="level-card active" data-file="NIVEL-1-KINAL.svg" data-name="Nivel 1">
+        <div class="level-card active" data-file="NIVEL-1-KINAL.svg">
           <span class="level-title">Primer Nivel</span>
-          <span class="level-desc">Ingreso principal, canchas deportivas, enfermería, auditorio y talleres básicos.</span>
+          <span class="level-desc">Ingreso principal, canchas y talleres básicos.</span>
         </div>
-        <div class="level-card" data-file="NIVEL 2 KINAL.svg" data-name="Nivel 2">
+        <div class="level-card" data-file="NIVEL 2 KINAL.svg">
           <span class="level-title">Segundo Nivel</span>
-          <span class="level-desc">Aulas del Edificio C, Edificio I, salón de preceptores y talleres de electricidad.</span>
+          <span class="level-desc">Aulas Edificio C, talleres de electricidad.</span>
         </div>
-        <div class="level-card" data-file="NIVEL 3 KINAL.svg" data-name="Nivel 3">
+        <div class="level-card" data-file="NIVEL 3 KINAL.svg">
           <span class="level-title">Tercer Nivel</span>
-          <span class="level-desc">Aulas C-30 a C-39, laboratorios H y G, sanitarios y áreas de lockers.</span>
+          <span class="level-desc">Aulas C-30 a C-39, laboratorios H y G, sanitarios.</span>
         </div>
-        <div class="level-card" data-file="NIVEL 4 KINAL.svg" data-name="Nivel 4">
+        <div class="level-card" data-file="NIVEL 4 KINAL.svg">
           <span class="level-title">Cuarto Nivel</span>
-          <span class="level-desc">Planta superior de escaleras y acceso a los niveles de azotea.</span>
+          <span class="level-desc">Planta superior de escaleras y acceso a la azotea.</span>
         </div>
       </div>
     </div>
 
-    <!-- Map Viewer Canvas -->
-    <div class="viewer-container" id="viewer">
-      <div class="loader" id="loader">
-        <div class="spinner"></div>
-      </div>
-      <div class="toast" id="toast">¡Guardado con éxito! 💾</div>
+    <div class="viewer-container draw-active" id="viewer">
+      <div class="loader" id="loader"><div class="spinner"></div></div>
+      <div class="toast" id="toast">¡Hecho! 💾</div>
       
-      <div class="canvas-wrapper" id="canvas">
-        <!-- SVG content will be injected here -->
-      </div>
+      <div class="canvas-wrapper" id="canvas"></div>
 
-      <!-- Controls -->
       <div class="controls">
+        <button class="control-btn" id="btn-undo" title="Deshacer (Ctrl+Z)">↩️</button>
+        <button class="control-btn" id="btn-redo" title="Rehacer (Ctrl+Y)">↪️</button>
+        <div style="height: 10px;"></div>
         <button class="control-btn" id="zoom-in" title="Acercar">+</button>
         <button class="control-btn" id="zoom-out" title="Alejar">-</button>
         <button class="control-btn" id="zoom-reset" title="Restaurar Vista">⟲</button>
-        <button class="control-btn" id="theme-toggle" title="Cambiar Fondo (Claro / Oscuro)">🌓</button>
+        <button class="control-btn" id="theme-toggle" title="Cambiar Fondo">🌓</button>
       </div>
+    </div>
+  </div>
 
-      <!-- Legend -->
-      <div class="legend-panel">
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #FFA500;"></div>
-          <span>Salones / Aulas</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #1E90FF;"></div>
-          <span>Baños (S.S)</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #FF4500;"></div>
-          <span>Escaleras / Rampas</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #D3D3D3;"></div>
-          <span>Concreto / Pasillos</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #90EE90;"></div>
-          <span>Grama / Jardines</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #228B22;"></div>
-          <span>Plantas / Maceteras</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #FFDAB9;"></div>
-          <span>Suelo General / Patios</span>
-        </div>
-        <div class="legend-item">
-          <div class="color-box" style="background-color: #FFE4C4;"></div>
-          <span>Otros Ambientes</span>
-        </div>
-      </div>
+  <div class="ctx-menu" id="ctx-menu">
+    <button id="ctx-copy">📋 Copiar (Ctrl+C)</button>
+    <button id="ctx-delete" style="color: #ef4444;">🗑️ Eliminar</button>
+    <div class="color-picker-row">
+      <span>Color HEX:</span>
+      <input type="color" id="ctx-color-input" value="#ff0000">
     </div>
   </div>
 
@@ -794,419 +241,281 @@
     const canvas = document.getElementById('canvas');
     const loader = document.getElementById('loader');
     const toast = document.getElementById('toast');
-    const levelCards = document.querySelectorAll('.level-card');
-    const themeToggleBtn = document.getElementById('theme-toggle');
-    
-    // Tools UI Buttons
-    const toolPanBtn = document.getElementById('tool-pan');
-    const toolPaintBtn = document.getElementById('tool-paint');
-    const toolDrawBtn = document.getElementById('tool-draw');
-    
-    // Panels
     const editPanel = document.getElementById('edit-panel');
-    const paletteTitle = editPanel.querySelector('h3');
     const drawOptions = document.getElementById('draw-options');
-    
     const swatches = document.querySelectorAll('.swatch');
     const customColorInput = document.getElementById('custom-color-input');
-    const saveMapBtn = document.getElementById('save-map-btn');
-    const downloadBtn = document.getElementById('download-btn');
-    const uploadBtn = document.getElementById('upload-btn');
-    const fileUploader = document.getElementById('file-uploader');
-    const autocolorBtn = document.getElementById('autocolor-btn');
-    const clearBtn = document.getElementById('clear-btn');
+    const ctxMenu = document.getElementById('ctx-menu');
     
-    // Draw specific controls
-    const addPolyBtn = document.getElementById('add-poly-btn');
-    const addPointBtn = document.getElementById('add-point-btn');
-    const lockPolyBtn = document.getElementById('lock-poly-btn');
-    const deleteRectBtn = document.getElementById('delete-rect-btn');
-    const rectOpacityInput = document.getElementById('rect-opacity-input');
-    const opacityValSpan = document.getElementById('opacity-val');
-
     const uploadTextureBtn = document.getElementById('upload-texture-btn');
     const textureFileInput = document.getElementById('texture-file-input');
     const textureScaleContainer = document.getElementById('texture-scale-container');
     const textureScaleInput = document.getElementById('texture-scale-input');
     const textureScaleVal = document.getElementById('texture-scale-val');
     const uploadedTexturesGrid = document.getElementById('uploaded-textures-grid');
+    const downloadBtn = document.getElementById('download-btn');
+    const uploadBtn = document.getElementById('upload-btn');
+    const fileUploader = document.getElementById('file-uploader');
+    const customColorHex = document.getElementById('custom-color-hex');
 
-    let isPolyLocked = false;
-    let isAddingPointMode = false;
-
-    // Pan / Zoom view state
-    let currentScale = 1;
-    let currentX = 0;
-    let currentY = 0;
-    let isDragging = false;
-    let startX = 0;
-    let startY = 0;
-    
-    let isDarkTheme = false;
-    let activeTool = 'pan';
-    let activePaintColor = '#FFA500';
+    let activeTool = 'draw';
+    let activePaintColor = '#FF7B00';
     let activeRectOpacity = 0.7;
     let currentFilename = 'NIVEL-1-KINAL.svg';
 
-    // Interactive Polygon State
+    let currentScale = 0.35;
+    let currentX = 0; let currentY = 0;
+    let isDragging = false; let startX = 0; let startY = 0;
+
     let selectedPoly = null;
     let handlesGroup = null;
-    
-    // Drawing a new polygon
-    let isDrawingPoly = false;
-    let polyPoints = []; // Array of {x, y}
-    let tempPolyline = null;
-    let tempLine = null;
-    let drawDots = [];
-    
-    // Editing state
+    let isPolyLocked = false;
     let isDraggingPoly = false;
     let isDraggingVertex = false;
     let activeVertexIndex = -1;
-    
-    let startMouseX = 0;
-    let startMouseY = 0;
-    let startSVGX = 0;
-    let startSVGY = 0;
     let polyStartPoints = [];
+    
+    let isDrawingPoly = false;
+    let drawPoints = [];
+    let tempDrawPoly = null;
+    let isPlacingVertex = false;
 
-    // Helper functions to parse and format path point coordinates
+    let clipboardPoly = null;
+    let history = [];
+    let historyStep = -1;
+
     function getPathPoints(pathEl) {
       const d = pathEl.getAttribute('d') || '';
       const numbers = d.match(/-?\d+(\.\d+)?/g) || [];
       const pts = [];
-      for (let i = 0; i < numbers.length; i += 2) {
-        pts.push({ x: parseFloat(numbers[i]), y: parseFloat(numbers[i+1]) });
-      }
+      for (let i = 0; i < numbers.length; i += 2) pts.push({ x: parseFloat(numbers[i]), y: parseFloat(numbers[i+1]) });
       return pts;
     }
-
     function setPathPoints(pathEl, pts) {
-      if (pts.length === 0) return;
+      if (!pts.length) return;
       let d = `M ${pts[0].x},${pts[0].y}`;
-      for (let i = 1; i < pts.length; i++) {
-        d += ` L ${pts[i].x},${pts[i].y}`;
-      }
+      for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].x},${pts[i].y}`;
       d += ' Z';
       pathEl.setAttribute('d', d);
     }
-
     function getSVGPoint(clientX, clientY) {
       const svgEl = canvas.querySelector('svg');
       if (!svgEl) return { x: 0, y: 0 };
-      const pt = svgEl.createSVGPoint();
-      pt.x = clientX;
-      pt.y = clientY;
-      try {
-        const svgPt = pt.matrixTransform(svgEl.getScreenCTM().inverse());
-        return { x: svgPt.x, y: svgPt.y };
-      } catch (e) {
-        // Fallback if matrix is singular or not loaded yet
-        const rect = canvas.getBoundingClientRect();
-        return {
-          x: (clientX - rect.left) / currentScale,
-          y: (clientY - rect.top) / currentScale
-        };
-      }
+      const pt = svgEl.createSVGPoint(); pt.x = clientX; pt.y = clientY;
+      try { return pt.matrixTransform(svgEl.getScreenCTM().inverse()); } 
+      catch (e) { const rect = canvas.getBoundingClientRect(); return { x: (clientX - rect.left) / currentScale, y: (clientY - rect.top) / currentScale }; }
     }
-
     function getSVGScale() {
       const svgEl = canvas.querySelector('svg');
       if (!svgEl) return currentScale;
-      try {
-        const ctm = svgEl.getScreenCTM();
-        return Math.hypot(ctm.a, ctm.b);
-      } catch (e) {
-        return currentScale;
-      }
+      try { const ctm = svgEl.getScreenCTM(); return Math.hypot(ctm.a, ctm.b); } catch (e) { return currentScale; }
     }
 
-    // Load active SVG
-    async function loadSVG(filename) {
-      currentFilename = filename;
-      loader.classList.add('visible');
+    function showToast(msg) {
+      toast.textContent = msg; toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), 2500);
+    }
+
+    function saveState() {
+      const blockGroup = canvas.querySelector('#custom-color-blocks');
+      if (!blockGroup) return;
+      const polysHTML = Array.from(blockGroup.querySelectorAll('.custom-poly')).map(p => p.outerHTML);
+      historyStep++;
+      history = history.slice(0, historyStep);
+      history.push(polysHTML);
+    }
+    function undo() { if (historyStep > 0) { historyStep--; restoreState(); showToast('Deshecho'); } }
+    function redo() { if (historyStep < history.length - 1) { historyStep++; restoreState(); showToast('Rehecho'); } }
+    function restoreState() {
+      const blockGroup = canvas.querySelector('#custom-color-blocks');
+      if (!blockGroup) return;
       deselectPoly();
-      cancelDrawing();
-      
-      isPolyLocked = false;
-      if (lockPolyBtn) {
-        lockPolyBtn.innerHTML = '<span>🔒 Bloquear Figuras</span>';
-        lockPolyBtn.style.backgroundColor = '#e11d48';
-      }
+      const polysArr = history[historyStep];
+      blockGroup.querySelectorAll('.custom-poly').forEach(p => p.remove());
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = '<svg>' + polysArr.join('') + '</svg>';
+      // Agregamos directamente al contenedor de bloques de color sin buscar los handles dentro
+      tempDiv.querySelectorAll('.custom-poly').forEach(p => blockGroup.appendChild(p));
+    }
+
+    async function loadSVG(filename) {
+      currentFilename = filename; loader.classList.add('visible');
+      deselectPoly(); history = []; historyStep = -1;
       try {
         const response = await fetch(`/api/maps/${filename}`);
-        if (!response.ok) throw new Error('Error al cargar plano');
-        const svgText = await response.text();
-        
-        canvas.innerHTML = svgText;
-        
+        if (!response.ok) throw new Error('Error al cargar');
+        canvas.innerHTML = await response.text();
         const svgEl = canvas.querySelector('svg');
         if (svgEl) {
-          svgEl.style.width = '100%';
-          svgEl.style.height = '100%';
-          
-          // Make all white filled shapes in the AutoCAD drawing transparent
-          // (using fill-opacity="0" so they remain clickable inside, but let background blocks show through!)
-          // We use window.getComputedStyle to detect white fills regardless of whether they are set via attributes or CSS classes!
-          const shapes = svgEl.querySelectorAll('path, rect, polygon, circle, ellipse, polyline');
-          shapes.forEach(shape => {
+          svgEl.style.width = '100%'; svgEl.style.height = '100%';
+          svgEl.querySelectorAll('path, rect, polygon, circle, ellipse, polyline').forEach(shape => {
             if (shape.classList.contains('custom-poly')) return;
             const fillVal = window.getComputedStyle(shape).fill;
-            const isWhite = fillVal === 'rgb(255, 255, 255)' || 
-                            fillVal === '#ffffff' || 
-                            fillVal === 'white';
-            if (isWhite) {
-              shape.style.setProperty('fill-opacity', '0', 'important');
-            }
+            if (['rgb(255, 255, 255)', '#ffffff', 'white'].includes(fillVal)) shape.style.setProperty('fill-opacity', '0', 'important');
           });
-          
           setupLayers(svgEl);
+          saveState();
         }
-        
         resetView();
-      } catch (err) {
-        console.error(err);
-        canvas.innerHTML = `<div style="color: #ef4444; font-weight: 500;">No se pudo cargar el plano. Asegúrate de ejecutar el servidor.</div>`;
-      } finally {
-        loader.classList.remove('visible');
-      }
+      } catch (err) { console.error(err); } 
+      finally { loader.classList.remove('visible'); }
     }
 
-    // Reset translation and zoom
+    function setupLayers(svgEl) {
+      const mainGroup = svgEl.querySelector('g:not(#custom-color-blocks):not(#poly-handles-group):not(#autocad-outlines)');
+      if (!mainGroup) return;
+      
+      const existingOutlines = svgEl.querySelector('#autocad-outlines');
+      if (existingOutlines) existingOutlines.remove();
+
+      let blockGroup = svgEl.querySelector('#custom-color-blocks');
+      if (!blockGroup) {
+        blockGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        blockGroup.setAttribute('id', 'custom-color-blocks');
+        svgEl.insertBefore(blockGroup, mainGroup.nextSibling);
+      }
+
+      const outlinesGroup = mainGroup.cloneNode(true);
+      outlinesGroup.setAttribute('id', 'autocad-outlines');
+      outlinesGroup.style.pointerEvents = 'none';
+      
+      outlinesGroup.querySelectorAll('path, rect, polygon, circle, ellipse, polyline').forEach(el => {
+        el.setAttribute('fill', 'none');
+        el.style.fill = 'none';
+        el.style.fillOpacity = '0';
+      });
+
+      const nestedBlocks = outlinesGroup.querySelector('#custom-color-blocks');
+      if (nestedBlocks) nestedBlocks.remove();
+      svgEl.appendChild(outlinesGroup);
+
+      // Forzamos que los puntos de control se rendericen al final de todo el SVG
+      let handles = svgEl.querySelector('#poly-handles-group');
+      if (!handles) {
+        handles = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        handles.setAttribute('id', 'poly-handles-group');
+      }
+      svgEl.appendChild(handles);
+      handlesGroup = handles;
+    }
+
     function resetView() {
       currentScale = 0.35;
       currentX = (viewer.clientWidth - canvas.clientWidth * currentScale) / 2;
       currentY = (viewer.clientHeight - canvas.clientHeight * currentScale) / 2;
       updateTransform();
     }
-
-    // Update transform without will-change:transform for vector sharpness
+    
     function updateTransform() {
       canvas.style.transform = `translate(${currentX}px, ${currentY}px) scale(${currentScale})`;
-      
-      // Dynamically adjust handle sizes to stay constant on screen
       if (handlesGroup) {
-        const handles = handlesGroup.querySelectorAll('circle');
         const r = Math.max(3, 6 / currentScale);
         const sw = Math.max(1, 2 / currentScale);
-        handles.forEach(h => {
-          h.setAttribute('r', r);
-          h.setAttribute('stroke-width', sw);
-        });
+        handlesGroup.querySelectorAll('circle').forEach(h => { h.setAttribute('r', r); h.setAttribute('stroke-width', sw); });
       }
     }
 
-    // Level selector click handler
-    levelCards.forEach(card => {
-      card.addEventListener('click', () => {
-        levelCards.forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
-        loadSVG(card.dataset.file);
-      });
+    document.querySelectorAll('.level-card').forEach(card => card.addEventListener('click', () => {
+      document.querySelectorAll('.level-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active'); loadSVG(card.dataset.file);
+    }));
+
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+      const isDark = document.documentElement.style.getPropertyValue('--canvas-bg') === '#111c3a';
+      document.documentElement.style.setProperty('--canvas-bg', isDark ? '#ffffff' : '#111c3a');
     });
 
-    // Theme Toggle Handler
-    themeToggleBtn.addEventListener('click', () => {
-      isDarkTheme = !isDarkTheme;
-      if (isDarkTheme) {
-        document.documentElement.style.setProperty('--canvas-bg', '#111c3a');
-      } else {
-        document.documentElement.style.setProperty('--canvas-bg', '#ffffff');
-      }
-    });
-
-    // Tool switching handlers
-    toolPanBtn.addEventListener('click', () => {
-      activeTool = 'pan';
-      deselectPoly();
-      cancelDrawing();
-      toolPanBtn.classList.add('active');
-      toolPaintBtn.classList.remove('active');
-      toolDrawBtn.classList.remove('active');
-      
-      editPanel.style.display = 'none';
-      viewer.className = 'viewer-container';
-    });
-
-    toolPaintBtn.addEventListener('click', () => {
-      activeTool = 'paint';
-      deselectPoly();
-      cancelDrawing();
-      toolPaintBtn.classList.add('active');
-      toolPanBtn.classList.remove('active');
-      toolDrawBtn.classList.remove('active');
-      
-      paletteTitle.textContent = "Elegir Color de Pintura";
-      editPanel.style.display = 'flex';
-      drawOptions.style.display = 'none';
-      viewer.className = 'viewer-container paint-active';
-    });
-
-    toolDrawBtn.addEventListener('click', () => {
-      activeTool = 'draw';
-      toolDrawBtn.classList.add('active');
-      toolPanBtn.classList.remove('active');
-      toolPaintBtn.classList.remove('active');
-      
-      paletteTitle.textContent = "Color del Rectángulo";
-      editPanel.style.display = 'flex';
-      drawOptions.style.display = 'flex';
-      viewer.className = 'viewer-container draw-active';
-    });
-
-    // Color Swatches Selection
-    swatches.forEach(sw => {
-      sw.addEventListener('click', () => {
-        swatches.forEach(s => s.classList.remove('selected'));
-        sw.classList.add('selected');
-        activePaintColor = sw.dataset.color;
-        
-        // Deselect texture swatches
-        if (uploadedTexturesGrid) {
-          uploadedTexturesGrid.querySelectorAll('.texture-swatch').forEach(s => {
-            s.style.borderColor = 'transparent';
-          });
-        }
-        if (textureScaleContainer) {
-          textureScaleContainer.style.display = 'none';
-        }
-        
-        if (activeTool === 'draw' && selectedPoly) {
-          selectedPoly.setAttribute('fill', activePaintColor);
-        }
-      });
-    });
-
+    swatches.forEach(sw => sw.addEventListener('click', () => {
+      swatches.forEach(s => s.classList.remove('selected')); sw.classList.add('selected');
+      activePaintColor = sw.dataset.color;
+      customColorHex.value = sw.dataset.color.toUpperCase(); // Actualiza el texto HEX
+      if (uploadedTexturesGrid) uploadedTexturesGrid.querySelectorAll('.texture-swatch').forEach(s => s.style.borderColor = 'transparent');
+      if (textureScaleContainer) textureScaleContainer.style.display = 'none';
+      if (activeTool === 'draw' && selectedPoly) { selectedPoly.setAttribute('fill', activePaintColor); saveState(); }
+    }));
+    
     customColorInput.addEventListener('input', (e) => {
-      swatches.forEach(s => s.classList.remove('selected'));
+      swatches.forEach(s => s.classList.remove('selected')); 
       activePaintColor = e.target.value;
-      
-      // Deselect texture swatches
-      if (uploadedTexturesGrid) {
-        uploadedTexturesGrid.querySelectorAll('.texture-swatch').forEach(s => {
-          s.style.borderColor = 'transparent';
-        });
-      }
-      if (textureScaleContainer) {
-        textureScaleContainer.style.display = 'none';
-      }
-      
-      if (activeTool === 'draw' && selectedPoly) {
-        selectedPoly.setAttribute('fill', activePaintColor);
-      }
+      customColorHex.value = e.target.value.toUpperCase(); // Actualiza el texto HEX
+      if (uploadedTexturesGrid) uploadedTexturesGrid.querySelectorAll('.texture-swatch').forEach(s => s.style.borderColor = 'transparent');
+      if (textureScaleContainer) textureScaleContainer.style.display = 'none';
+      if (activeTool === 'draw' && selectedPoly) { selectedPoly.setAttribute('fill', activePaintColor); saveState(); }
     });
 
-    // Custom Opacity Slider
-    rectOpacityInput.addEventListener('input', (e) => {
-      const val = parseFloat(e.target.value);
-      activeRectOpacity = val;
-      opacityValSpan.textContent = val.toFixed(2);
-      
-      if (selectedPoly) {
-        selectedPoly.setAttribute('fill-opacity', val);
+    // Nuevo evento para inyectar colores desde el texto HEX escrito a mano
+    customColorHex.addEventListener('input', (e) => {
+      let val = e.target.value.trim();
+      if (!val.startsWith('#')) val = '#' + val;
+      if (/^#[0-9A-F]{6}$/i.test(val)) {
+        customColorInput.value = val;
+        swatches.forEach(s => s.classList.remove('selected')); 
+        activePaintColor = val;
+        if (uploadedTexturesGrid) uploadedTexturesGrid.querySelectorAll('.texture-swatch').forEach(s => s.style.borderColor = 'transparent');
+        if (textureScaleContainer) textureScaleContainer.style.display = 'none';
+        if (activeTool === 'draw' && selectedPoly) { selectedPoly.setAttribute('fill', activePaintColor); saveState(); }
       }
     });
-
-    // Trigger local file selection when clicking Upload Texture
-    uploadTextureBtn.addEventListener('click', () => {
-      textureFileInput.click();
+    
+    document.getElementById('rect-opacity-input').addEventListener('input', (e) => {
+      activeRectOpacity = parseFloat(e.target.value);
+      document.getElementById('opacity-val').textContent = activeRectOpacity.toFixed(2);
+      if (selectedPoly) { selectedPoly.setAttribute('fill-opacity', activeRectOpacity); saveState(); }
     });
 
-    // Handle texture file upload
+    uploadTextureBtn.addEventListener('click', () => textureFileInput.click());
     textureFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = (evt) => {
         const base64Data = evt.target.result;
-        
         const svgEl = canvas.querySelector('svg');
         if (!svgEl) return;
-
-        // Ensure defs element exists in SVG
         let defs = svgEl.querySelector('defs');
-        if (!defs) {
-          defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-          svgEl.insertBefore(defs, svgEl.firstChild);
-        }
-
-        // Generate unique pattern ID
+        if (!defs) { defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs'); svgEl.insertBefore(defs, svgEl.firstChild); }
+        
         const patternId = 'pattern-texture-' + Date.now();
-        const tileSize = 100; // Default tile size
-
-        // Create SVG Pattern
         const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-        pattern.setAttribute('id', patternId);
-        pattern.setAttribute('patternUnits', 'userSpaceOnUse');
-        pattern.setAttribute('width', tileSize);
-        pattern.setAttribute('height', tileSize);
-
-        // Create image tag inside pattern
+        pattern.setAttribute('id', patternId); pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+        pattern.setAttribute('width', '100'); pattern.setAttribute('height', '100');
+        
         const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-        image.setAttribute('href', base64Data);
-        image.setAttribute('x', '0');
-        image.setAttribute('y', '0');
-        image.setAttribute('width', tileSize);
-        image.setAttribute('height', tileSize);
+        image.setAttribute('href', base64Data); image.setAttribute('x', '0'); image.setAttribute('y', '0');
+        image.setAttribute('width', '100'); image.setAttribute('height', '100');
         image.setAttribute('preserveAspectRatio', 'none');
+        
+        pattern.appendChild(image); defs.appendChild(pattern);
 
-        pattern.appendChild(image);
-        defs.appendChild(pattern);
-
-        // Add to uploaded textures grid in sidebar
         const swatch = document.createElement('div');
         swatch.className = 'texture-swatch';
-        swatch.style.width = '40px';
-        swatch.style.height = '40px';
-        swatch.style.borderRadius = '4px';
-        swatch.style.border = '2px solid transparent';
-        swatch.style.backgroundImage = `url(${base64Data})`;
-        swatch.style.backgroundSize = 'cover';
-        swatch.style.cursor = 'pointer';
-        swatch.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+        swatch.style.width = '40px'; swatch.style.height = '40px'; swatch.style.borderRadius = '4px';
+        swatch.style.border = '2px solid transparent'; swatch.style.backgroundImage = `url(${base64Data})`;
+        swatch.style.backgroundSize = 'cover'; swatch.style.cursor = 'pointer';
         swatch.dataset.patternId = patternId;
 
-        // Swatch click listener
         swatch.addEventListener('click', () => {
-          // Deselect standard swatches
           swatches.forEach(s => s.classList.remove('selected'));
-          // Deselect other texture swatches
-          uploadedTexturesGrid.querySelectorAll('.texture-swatch').forEach(s => {
-            s.style.borderColor = 'transparent';
-          });
-          swatch.style.borderColor = '#38bdf8'; // Blue selection border
-
+          uploadedTexturesGrid.querySelectorAll('.texture-swatch').forEach(s => s.style.borderColor = 'transparent');
+          swatch.style.borderColor = '#38bdf8';
           activePaintColor = `url(#${patternId})`;
-
           if (selectedPoly) {
             selectedPoly.setAttribute('fill', activePaintColor);
-            selectedPoly.removeAttribute('style'); // Clear inline styles
-            selectedPoly.setAttribute('style', 'stroke:none;');
-            
-            // Show scale slider
+            selectedPoly.removeAttribute('style'); selectedPoly.setAttribute('style', 'stroke:none;');
             textureScaleInput.value = pattern.getAttribute('width');
             textureScaleVal.textContent = pattern.getAttribute('width') + 'px';
             textureScaleContainer.style.display = 'block';
+            saveState();
           }
         });
-
         uploadedTexturesGrid.appendChild(swatch);
-
-        // Automatically trigger click on the new texture swatch to apply it to selected shape
         swatch.click();
       };
-      
-      reader.readAsDataURL(file);
-      // Reset input value to allow uploading same file again
-      textureFileInput.value = '';
+      reader.readAsDataURL(file); textureFileInput.value = '';
     });
 
-    // Texture scale slider handler
     textureScaleInput.addEventListener('input', (e) => {
-      const val = e.target.value;
-      textureScaleVal.textContent = val + 'px';
-
+      const val = e.target.value; textureScaleVal.textContent = val + 'px';
       if (!selectedPoly) return;
       const fill = selectedPoly.getAttribute('fill') || '';
       if (fill.startsWith('url(#pattern-')) {
@@ -1215,120 +524,32 @@
         if (svgEl) {
           const pattern = svgEl.querySelector('#' + patternId);
           if (pattern) {
-            pattern.setAttribute('width', val);
-            pattern.setAttribute('height', val);
+            pattern.setAttribute('width', val); pattern.setAttribute('height', val);
             const img = pattern.querySelector('image');
-            if (img) {
-              img.setAttribute('width', val);
-              img.setAttribute('height', val);
-            }
+            if (img) { img.setAttribute('width', val); img.setAttribute('height', val); }
           }
         }
       }
     });
 
-    // Paint bucket click-to-paint on DOM elements
-    canvas.addEventListener('click', (e) => {
-      if (activeTool === 'paint') {
-        const path = e.target.closest('path');
-        // Do not paint custom-polys in paint mode
-        if (path && !path.classList.contains('custom-poly')) {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          let style = path.getAttribute('style') || '';
-          if (style.includes('fill:')) {
-            style = style.replace(/fill:\s*[^;]+/, `fill:${activePaintColor}`);
-          } else {
-            style = style + `;fill:${activePaintColor}`;
-          }
-          path.setAttribute('style', style);
-        }
-      }
+    document.getElementById('lock-poly-btn').addEventListener('click', (e) => {
+      isPolyLocked = !isPolyLocked;
+      const polys = canvas.querySelectorAll('.custom-poly');
+      e.target.closest('button').innerHTML = isPolyLocked ? '<span>🔓 Desbloquear Cuerpo</span>' : '<span>🔒 Bloquear Figuras</span>';
+      e.target.closest('button').style.backgroundColor = isPolyLocked ? '#10b981' : '#e11d48';
+      polys.forEach(p => isPolyLocked ? p.classList.add('locked') : p.classList.remove('locked'));
     });
 
-    // Setup 3-layer rendering system inside SVG structure
-    function setupLayers(svgEl) {
-      // Find main AutoCAD drawing group
-      const mainGroup = svgEl.querySelector('g:not(#custom-color-blocks):not(#poly-handles-group):not(#autocad-outlines)');
-      if (!mainGroup) return;
+    document.getElementById('btn-undo').addEventListener('click', undo);
+    document.getElementById('btn-redo').addEventListener('click', redo);
 
-      // Remove existing outlines group if any
-      const existingOutlines = svgEl.querySelector('#autocad-outlines');
-      if (existingOutlines) {
-        existingOutlines.remove();
-      }
-
-      // 1. Setup Custom Blocks Container in the middle (on top of fills, but under outlines)
-      let blockGroup = svgEl.querySelector('#custom-color-blocks');
-      if (!blockGroup) {
-        blockGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        blockGroup.setAttribute('id', 'custom-color-blocks');
-        svgEl.insertBefore(blockGroup, mainGroup.nextSibling);
-      } else {
-        // Ensure it's positioned after mainGroup
-        if (blockGroup.previousSibling !== mainGroup) {
-          svgEl.insertBefore(blockGroup, mainGroup.nextSibling);
-        }
-      }
-
-      // 2. Clone mainGroup to create the top outlines layer (styled via CSS override rules)
-      const outlinesGroup = mainGroup.cloneNode(true);
-      outlinesGroup.setAttribute('id', 'autocad-outlines');
-      
-      // Remove any block group clone inside it
-      const nestedBlocks = outlinesGroup.querySelector('#custom-color-blocks');
-      if (nestedBlocks) nestedBlocks.remove();
-
-      // Append outlines layer at the very end (top layer)
-      svgEl.appendChild(outlinesGroup);
-
-      // Mark custom-poly elements
-      const paths = blockGroup.querySelectorAll('path');
-      paths.forEach(p => {
-        p.classList.add('custom-poly');
-        if (isPolyLocked) {
-          p.classList.add('locked');
-        }
-      });
-
-      // Setup handles layer inside blockGroup
-      let handles = blockGroup.querySelector('#poly-handles-group');
-      if (!handles) {
-        handles = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        handles.setAttribute('id', 'poly-handles-group');
-        blockGroup.appendChild(handles);
-      }
-      handlesGroup = handles;
-    }
-
-    // Select polygon shape
     function selectPoly(poly) {
-      deselectPoly();
-      selectedPoly = poly;
-      selectedPoly.classList.add('selected');
-      
+      deselectPoly(); selectedPoly = poly; selectedPoly.classList.add('selected');
       renderPolyHandles();
+      const fill = selectedPoly.getAttribute('fill') || '#FF7B00';
+      swatches.forEach(s => s.dataset.color.toLowerCase() === fill.toLowerCase() ? s.classList.add('selected') : s.classList.remove('selected'));
+      document.getElementById('rect-opacity-input').value = selectedPoly.getAttribute('fill-opacity') || '0.7';
       
-      // Show add-point button in sidebar
-      addPointBtn.style.display = 'block';
-      
-      // Update sidebar opacity
-      const op = parseFloat(selectedPoly.getAttribute('fill-opacity') || '0.7');
-      rectOpacityInput.value = op;
-      opacityValSpan.textContent = op.toFixed(2);
-      
-      // Select appropriate swatch in palette
-      const fill = selectedPoly.getAttribute('fill') || '#FFA500';
-      swatches.forEach(s => {
-        if (s.dataset.color.toLowerCase() === fill.toLowerCase()) {
-          s.classList.add('selected');
-        } else {
-          s.classList.remove('selected');
-        }
-      });
-      
-      // Check if it has a texture pattern to show the scale slider
       if (fill.startsWith('url(#pattern-')) {
         const patternId = fill.substring(5, fill.length - 1);
         const svgEl = canvas.querySelector('svg');
@@ -1336,8 +557,7 @@
           const pattern = svgEl.querySelector('#' + patternId);
           if (pattern) {
             const width = pattern.getAttribute('width') || '100';
-            textureScaleInput.value = width;
-            textureScaleVal.textContent = width + 'px';
+            textureScaleInput.value = width; textureScaleVal.textContent = width + 'px';
             textureScaleContainer.style.display = 'block';
           }
         }
@@ -1345,666 +565,361 @@
         textureScaleContainer.style.display = 'none';
       }
     }
-
-    // Deselect shape
+    
     function deselectPoly() {
-      if (selectedPoly) {
-        selectedPoly.classList.remove('selected');
-        selectedPoly = null;
-      }
-      if (handlesGroup) {
-        handlesGroup.innerHTML = '';
-      }
-      if (addPointBtn) {
-        addPointBtn.style.display = 'none';
-      }
-      if (textureScaleContainer) {
-        textureScaleContainer.style.display = 'none';
-      }
-      isAddingPointMode = false;
-      updateAddPointButtonState();
+      if (selectedPoly) { selectedPoly.classList.remove('selected'); selectedPoly = null; }
+      if (handlesGroup) handlesGroup.innerHTML = '';
+      ctxMenu.style.display = 'none';
+      if (tempDrawPoly) { tempDrawPoly.remove(); tempDrawPoly = null; }
+      isDrawingPoly = false; drawPoints = []; isPlacingVertex = false;
+      if (textureScaleContainer) textureScaleContainer.style.display = 'none';
     }
 
-    function updateAddPointButtonState() {
-      if (!addPointBtn) return;
-      if (isAddingPointMode) {
-        addPointBtn.style.backgroundColor = '#f59e0b'; // Amber
-        addPointBtn.innerHTML = '<span>🎯 Clic en el Borde</span>';
-        viewer.style.cursor = 'cell';
-      } else {
-        addPointBtn.style.backgroundColor = '#10b981'; // Green
-        addPointBtn.innerHTML = '<span>➕ Añadir Punto a Forma</span>';
-        viewer.style.cursor = '';
-      }
-    }
-
-    function cancelDrawing() {
-      // No-op placeholder since manual drawing state machine was simplified
-    }
-
-    // Render handle dots for selected polygon vertices
     function renderPolyHandles() {
       if (!selectedPoly || !handlesGroup) return;
       handlesGroup.innerHTML = '';
-      
       const pts = getPathPoints(selectedPoly);
-      const r = Math.max(3, 6 / currentScale);
-      const sw = Math.max(1, 2 / currentScale);
-      
+      const r = Math.max(3, 6 / currentScale); const sw = Math.max(1, 2 / currentScale);
       pts.forEach((p, idx) => {
-        const handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        handle.setAttribute('cx', p.x);
-        handle.setAttribute('cy', p.y);
-        handle.setAttribute('r', r);
-        handle.setAttribute('fill', '#ffffff');
-        handle.setAttribute('stroke', '#38bdf8');
-        handle.setAttribute('stroke-width', sw);
-        handle.setAttribute('style', 'cursor: pointer; pointer-events: auto;');
-        handle.setAttribute('data-index', idx);
-        
-        // Single click and drag to move vertex
-        handle.addEventListener('pointerdown', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          isDraggingVertex = true;
-          activeVertexIndex = idx;
-          startMouseX = e.clientX;
-          startMouseY = e.clientY;
-          const svgPt = getSVGPoint(e.clientX, e.clientY);
-          startSVGX = svgPt.x;
-          startSVGY = svgPt.y;
+        const h = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        h.setAttribute('cx', p.x); h.setAttribute('cy', p.y); h.setAttribute('r', r);
+        h.setAttribute('fill', '#fff'); h.setAttribute('stroke', '#38bdf8'); h.setAttribute('stroke-width', sw);
+        h.setAttribute('style', 'cursor: pointer; pointer-events: auto;');
+        h.addEventListener('pointerdown', (e) => {
+          if(isPlacingVertex) return;
+          e.preventDefault(); e.stopPropagation(); isDraggingVertex = true; activeVertexIndex = idx;
           polyStartPoints = getPathPoints(selectedPoly);
         });
-
-        // Double click on a vertex handle to delete it!
-        handle.addEventListener('dblclick', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
+        h.addEventListener('dblclick', (e) => {
+          e.preventDefault(); e.stopPropagation();
           const currentPts = getPathPoints(selectedPoly);
-          if (currentPts.length > 3) {
-            currentPts.splice(idx, 1);
-            setPathPoints(selectedPoly, currentPts);
-            renderPolyHandles();
-          } else {
-            alert('Un polígono debe tener al menos 3 puntos.');
-          }
+          if (currentPts.length > 3) { currentPts.splice(idx, 1); setPathPoints(selectedPoly, currentPts); renderPolyHandles(); saveState(); }
         });
-        
-        handlesGroup.appendChild(handle);
+        handlesGroup.appendChild(h);
       });
     }
 
-    // Handle clicks/selections on canvas
-    viewer.addEventListener('pointerdown', (e) => {
-      if (activeTool !== 'draw') return;
-      if (e.target.closest('.sidebar') || e.target.closest('.controls') || e.target.closest('.legend-panel')) return;
-      
-      const svgPt = getSVGPoint(e.clientX, e.clientY);
-      const x = svgPt.x;
-      const y = svgPt.y;
+    // Dibujar polígono en vivo con puntos movibles
+    function updateTempPoly(svgPt = null) {
+      if (!tempDrawPoly && drawPoints.length > 0) {
+        tempDrawPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+        tempDrawPoly.setAttribute('stroke', '#f97316'); tempDrawPoly.setAttribute('stroke-width', 3 / getSVGScale());
+        tempDrawPoly.setAttribute('fill', 'none'); tempDrawPoly.style.pointerEvents = 'none';
+        canvas.querySelector('#custom-color-blocks').appendChild(tempDrawPoly);
+      }
+      if (tempDrawPoly) {
+        let ptsStr = drawPoints.map(p => `${p.x},${p.y}`).join(' ');
+        if (svgPt) ptsStr += ` ${svgPt.x},${svgPt.y}`;
+        tempDrawPoly.setAttribute('points', ptsStr);
+      }
+    }
 
-      // If we are in "Add Point mode", check border click immediately!
-      if (isAddingPointMode && selectedPoly && !e.target.closest('#poly-handles-group')) {
-        const pts = getPathPoints(selectedPoly);
-        if (pts.length >= 3) {
-          for (let i = 0; i < pts.length; i++) {
-            const ax = pts[i].x;
-            const ay = pts[i].y;
-            const bx = pts[(i + 1) % pts.length].x;
-            const by = pts[(i + 1) % pts.length].y;
-            const dx = bx - ax;
-            const dy = by - ay;
-            const lenSq = dx * dx + dy * dy;
-            let t = 0;
-            if (lenSq > 0) {
-              t = ((x - ax) * dx + (y - ay) * dy) / lenSq;
-              t = Math.max(0, Math.min(1, t));
-            }
-            const projX = ax + t * dx;
-            const projY = ay + t * dy;
-            const dist = Math.hypot(x - projX, y - projY);
-            
-            // Scale-independent threshold (24 screen pixels for easy click targeting)
-            const threshold = 24 / getSVGScale();
-            if (dist < threshold) {
-              e.preventDefault();
-              e.stopPropagation();
-              pts.splice(i + 1, 0, { x, y });
-              setPathPoints(selectedPoly, pts);
-              renderPolyHandles();
-              
-              isAddingPointMode = false;
-              updateAddPointButtonState();
-              
-              toast.textContent = 'Punto añadido con éxito.';
-              toast.classList.add('visible');
-              setTimeout(() => toast.classList.remove('visible'), 2000);
-              return;
-            }
+    function renderDrawHandles() {
+      if (!handlesGroup) return;
+      handlesGroup.innerHTML = '';
+      const r = Math.max(3, 6 / currentScale);
+      const sw = Math.max(1, 2 / currentScale);
+      drawPoints.forEach((p, idx) => {
+        const h = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        h.setAttribute('cx', p.x); h.setAttribute('cy', p.y); h.setAttribute('r', r);
+        h.setAttribute('fill', idx === 0 ? '#ef4444' : '#fff');
+        h.setAttribute('stroke', '#38bdf8'); h.setAttribute('stroke-width', sw);
+        h.setAttribute('style', 'cursor: pointer; pointer-events: auto;');
+
+        h.addEventListener('pointerdown', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          if (idx === 0 && drawPoints.length > 2) {
+            closeDrawingPoly();
+            return;
           }
-        }
-        
-        // If they clicked outside the border while in mode, cancel it
-        isAddingPointMode = false;
-        updateAddPointButtonState();
-        return;
-      }
+          isDraggingVertex = true;
+          activeVertexIndex = idx;
+          polyStartPoints = [...drawPoints];
+        });
+
+        h.addEventListener('dblclick', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          drawPoints.splice(idx, 1);
+          if (drawPoints.length === 0) {
+            cancelDrawing();
+          } else {
+            renderDrawHandles();
+            updateTempPoly();
+          }
+        });
+        handlesGroup.appendChild(h);
+      });
+    }
+
+    function closeDrawingPoly() {
+      const blockGroup = canvas.querySelector('#custom-color-blocks');
+      const newPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      newPath.setAttribute('class', 'custom-poly'); newPath.setAttribute('fill', activePaintColor);
+      newPath.setAttribute('fill-opacity', activeRectOpacity); newPath.setAttribute('style', 'stroke:none;');
+      setPathPoints(newPath, drawPoints);
       
-      // Regular selection / dragging logic
-      const poly = e.target.closest('.custom-poly');
-      if (poly) {
-        selectPoly(poly);
-        
-        if (!isPolyLocked) {
-          e.preventDefault();
-          e.stopPropagation();
-          isDraggingPoly = true;
-          startMouseX = e.clientX;
-          startMouseY = e.clientY;
-          startSVGX = x;
-          startSVGY = y;
-          polyStartPoints = getPathPoints(selectedPoly);
-        }
-      } else if (!e.target.closest('#poly-handles-group')) {
-        // Deselect if clicking outside shapes
-        deselectPoly();
-      }
+      // La solución mágica: solo lo agregamos al final del grupo de bloques
+      blockGroup.appendChild(newPath);
+      
+      cancelDrawing();
+      selectPoly(newPath); saveState();
+    }
+
+    function cancelDrawing() {
+      isDrawingPoly = false; drawPoints = [];
+      if (tempDrawPoly) { tempDrawPoly.remove(); tempDrawPoly = null; }
+      if (handlesGroup) handlesGroup.innerHTML = '';
+    }
+
+    document.getElementById('add-poly-btn').addEventListener('click', () => {
+      deselectPoly(); isDrawingPoly = true; drawPoints = [];
+      showToast('Modo dibujo: Clics para puntos, arrástralos, y cierra en el punto rojo.');
     });
 
-    // Explicit Crear Cuadrado button handler
-    addPolyBtn.addEventListener('click', () => {
-      const svgEl = canvas.querySelector('svg');
-      if (!svgEl) return;
-      
-      const blockGroup = svgEl.querySelector('#custom-color-blocks');
-      if (!blockGroup) return;
-      
-      // Auto-unlock figures when creating a new one so user can adjust it
-      isPolyLocked = false;
-      if (lockPolyBtn) {
-        lockPolyBtn.innerHTML = '<span>🔒 Bloquear Figuras</span>';
-        lockPolyBtn.style.backgroundColor = '#e11d48';
-      }
-      const polys = canvas.querySelectorAll('.custom-poly');
-      polys.forEach(p => p.classList.remove('locked'));
-      
+    // Cuadrado exprés
+    document.getElementById('add-square-btn').addEventListener('click', () => {
       deselectPoly();
-      
-      // Determine center of current viewport in absolute coordinate space
       const rawCenterX = (viewer.clientWidth / 2 - currentX) / currentScale;
       const rawCenterY = (viewer.clientHeight / 2 - currentY) / currentScale;
-      
-      // Standard default rectangle size (200x150 px)
-      const w = 200;
-      const h = 150;
-      
-      const x1 = rawCenterX - w / 2;
-      const y1 = rawCenterY - h / 2;
-      const x2 = rawCenterX + w / 2;
-      const y2 = rawCenterY - h / 2;
-      const x3 = rawCenterX + w / 2;
-      const y3 = rawCenterY + h / 2;
-      const x4 = rawCenterX - w / 2;
-      const y4 = rawCenterY + h / 2;
-      
+      const w = 200, h = 150;
       const pts = [
-        { x: x1, y: y1 },
-        { x: x2, y: y2 },
-        { x: x3, y: y3 },
-        { x: x4, y: y4 }
+        { x: rawCenterX - w / 2, y: rawCenterY - h / 2 },
+        { x: rawCenterX + w / 2, y: rawCenterY - h / 2 },
+        { x: rawCenterX + w / 2, y: rawCenterY + h / 2 },
+        { x: rawCenterX - w / 2, y: rawCenterY + h / 2 }
       ];
-      
+      const blockGroup = canvas.querySelector('#custom-color-blocks');
       const newPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       newPath.setAttribute('class', 'custom-poly');
       newPath.setAttribute('fill', activePaintColor);
       newPath.setAttribute('fill-opacity', activeRectOpacity);
       newPath.setAttribute('style', 'stroke:none;');
-      
       setPathPoints(newPath, pts);
       
-      // Insert path before the handles group layer so handles remain on top
-      blockGroup.insertBefore(newPath, handlesGroup);
+      // Arreglado aquí también
+      blockGroup.appendChild(newPath);
       
       selectPoly(newPath);
-      
-      toast.textContent = 'Bloque cuadrado creado. Arrastra sus esquinas.';
-      toast.classList.add('visible');
-      setTimeout(() => toast.classList.remove('visible'), 2500);
+      saveState(); showToast('Cuadrado creado en el centro.');
     });
 
-    // Lock/Unlock figures editing movement
-    lockPolyBtn.addEventListener('click', () => {
-      isPolyLocked = !isPolyLocked;
-      
-      const polys = canvas.querySelectorAll('.custom-poly');
-      if (isPolyLocked) {
-        polys.forEach(p => p.classList.add('locked'));
-        lockPolyBtn.innerHTML = '<span>🔓 Desbloquear Cuerpo</span>';
-        lockPolyBtn.style.backgroundColor = '#10b981'; // Green
-        toast.textContent = 'Cuerpo de figuras bloqueado. Usa las esquinas para editarlas.';
-      } else {
-        polys.forEach(p => p.classList.remove('locked'));
-        lockPolyBtn.innerHTML = '<span>🔒 Bloquear Cuerpo</span>';
-        lockPolyBtn.style.backgroundColor = '#e11d48'; // Red
-        toast.textContent = 'Figuras desbloqueadas. Puedes moverlas completas.';
+    viewer.addEventListener('pointerdown', (e) => {
+      if (e.button === 2) return;
+      if (activeTool === 'paint' && e.target.closest('path') && !e.target.closest('.custom-poly')) {
+        let style = e.target.getAttribute('style') || '';
+        style = style.includes('fill:') ? style.replace(/fill:\s*[^;]+/, `fill:${activePaintColor}`) : style + `;fill:${activePaintColor}`;
+        e.target.setAttribute('style', style); return;
       }
-      toast.classList.add('visible');
-      setTimeout(() => toast.classList.remove('visible'), 2500);
-    });
-
-    // Explicit Add Point button handler
-    addPointBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (!selectedPoly) return;
       
-      isAddingPointMode = !isAddingPointMode;
-      updateAddPointButtonState();
-    });
+      if (activeTool !== 'draw' || e.target.closest('.sidebar') || e.target.closest('.controls')) {
+        isDragging = true; startX = e.clientX - currentX; startY = e.clientY - currentY; return;
+      }
+      if (isPlacingVertex) return;
 
-    // Move/Resize mouse movements
-    viewer.addEventListener('pointermove', (e) => {
-      if (activeTool !== 'draw' || !selectedPoly) return;
-      
       const svgPt = getSVGPoint(e.clientX, e.clientY);
-      const dx = svgPt.x - startSVGX;
-      const dy = svgPt.y - startSVGY;
       
-      if (isDraggingPoly) {
-        e.preventDefault();
-        const nextPoints = polyStartPoints.map(p => ({
-          x: p.x + dx,
-          y: p.y + dy
-        }));
+      if (isDrawingPoly) {
+        drawPoints.push(svgPt);
+        renderDrawHandles();
+        updateTempPoly(svgPt);
+        return;
+      }
+
+      const poly = e.target.closest('.custom-poly');
+      if (poly && !e.target.closest('#poly-handles-group')) {
+        selectPoly(poly);
+        if (!isPolyLocked) {
+          e.preventDefault(); e.stopPropagation(); isDraggingPoly = true; polyStartPoints = getPathPoints(selectedPoly);
+          startX = svgPt.x; startY = svgPt.y;
+        }
+      } else if (!e.target.closest('#poly-handles-group')) {
+        deselectPoly(); isDragging = true; startX = e.clientX - currentX; startY = e.clientY - currentY;
+      }
+    });
+
+    viewer.addEventListener('pointermove', (e) => {
+      const svgPt = getSVGPoint(e.clientX, e.clientY);
+      
+      if (isPlacingVertex && selectedPoly && activeVertexIndex !== -1) {
+        const pts = getPathPoints(selectedPoly);
+        pts[activeVertexIndex] = { x: svgPt.x, y: svgPt.y };
+        setPathPoints(selectedPoly, pts);
+        const handle = handlesGroup.querySelectorAll('circle')[activeVertexIndex];
+        if (handle) { handle.setAttribute('cx', svgPt.x); handle.setAttribute('cy', svgPt.y); }
+        return;
+      }
+
+      if (isDrawingPoly && drawPoints.length > 0) {
+        updateTempPoly(svgPt);
+      }
+
+      if (isDragging) { 
+        currentX = e.clientX - startX; currentY = e.clientY - startY; updateTransform(); 
+      }
+      else if (isDraggingPoly && selectedPoly) {
+        const dx = svgPt.x - startX; const dy = svgPt.y - startY;
+        const nextPoints = polyStartPoints.map(p => ({ x: p.x + dx, y: p.y + dy }));
         setPathPoints(selectedPoly, nextPoints);
-        
-        // Optimize: Update existing handle positions directly in the DOM instead of recreating them!
         const handles = handlesGroup.querySelectorAll('circle');
-        nextPoints.forEach((p, idx) => {
-          if (handles[idx]) {
-            handles[idx].setAttribute('cx', p.x);
-            handles[idx].setAttribute('cy', p.y);
-          }
-        });
-      } else if (isDraggingVertex && activeVertexIndex !== -1) {
-        e.preventDefault();
-        const nextPoints = [...polyStartPoints];
-        const newPt = {
-          x: polyStartPoints[activeVertexIndex].x + dx,
-          y: polyStartPoints[activeVertexIndex].y + dy
-        };
-        nextPoints[activeVertexIndex] = newPt;
-        setPathPoints(selectedPoly, nextPoints);
-        
-        // Optimize: Update only the dragged handle's position directly in the DOM!
-        const handles = handlesGroup.querySelectorAll('circle');
-        if (handles[activeVertexIndex]) {
-          handles[activeVertexIndex].setAttribute('cx', newPt.x);
-          handles[activeVertexIndex].setAttribute('cy', newPt.y);
+        nextPoints.forEach((p, idx) => { if (handles[idx]) { handles[idx].setAttribute('cx', p.x); handles[idx].setAttribute('cy', p.y); }});
+      } else if (isDraggingVertex) {
+        if (isDrawingPoly) {
+          drawPoints[activeVertexIndex] = { x: svgPt.x, y: svgPt.y };
+          updateTempPoly(svgPt);
+          const handle = handlesGroup.querySelectorAll('circle')[activeVertexIndex];
+          if (handle) { handle.setAttribute('cx', svgPt.x); handle.setAttribute('cy', svgPt.y); }
+        } else if (selectedPoly) {
+          const newPt = { x: svgPt.x, y: svgPt.y };
+          const nextPoints = [...polyStartPoints]; nextPoints[activeVertexIndex] = newPt;
+          setPathPoints(selectedPoly, nextPoints);
+          const handle = handlesGroup.querySelectorAll('circle')[activeVertexIndex];
+          if (handle) { handle.setAttribute('cx', newPt.x); handle.setAttribute('cy', newPt.y); }
         }
       }
     });
 
-    window.addEventListener('pointerup', () => {
-      isDraggingPoly = false;
-      isDraggingVertex = false;
-      activeVertexIndex = -1;
+    viewer.addEventListener('pointerup', () => {
+      if (isDraggingPoly || isDraggingVertex) {
+        if (!isDrawingPoly) saveState();
+      }
+      isDragging = false; isDraggingPoly = false; isDraggingVertex = false;
     });
 
-    // Delete selected block shape
-    deleteRectBtn.addEventListener('click', () => {
-      if (selectedPoly) {
-        selectedPoly.remove();
-        deselectPoly();
+    viewer.addEventListener('click', (e) => {
+      if (isPlacingVertex) { isPlacingVertex = false; saveState(); e.stopPropagation(); }
+      ctxMenu.style.display = 'none';
+    });
+
+    viewer.addEventListener('dblclick', (e) => {
+      if (isPlacingVertex || !selectedPoly || e.target.closest('#poly-handles-group')) return;
+      const svgPt = getSVGPoint(e.clientX, e.clientY);
+      const pts = getPathPoints(selectedPoly);
+      let minD = Infinity; let insertIdx = -1;
+      
+      for (let i = 0; i < pts.length; i++) {
+        const ax = pts[i].x, ay = pts[i].y;
+        const bx = pts[(i + 1) % pts.length].x, by = pts[(i + 1) % pts.length].y;
+        const dx = bx - ax, dy = by - ay;
+        const lenSq = dx * dx + dy * dy;
+        let t = Math.max(0, Math.min(1, ((svgPt.x - ax) * dx + (svgPt.y - ay) * dy) / lenSq));
+        const dist = Math.hypot(svgPt.x - (ax + t * dx), svgPt.y - (ay + t * dy));
+        if (dist < minD) { minD = dist; insertIdx = i + 1; }
+      }
+      if (minD < 30 / getSVGScale() && insertIdx !== -1) {
+        pts.splice(insertIdx, 0, { x: svgPt.x, y: svgPt.y });
+        setPathPoints(selectedPoly, pts);
+        renderPolyHandles();
+        isPlacingVertex = true; activeVertexIndex = insertIdx;
       }
     });
 
-    // Save map changes to disk
-    saveMapBtn.addEventListener('click', async () => {
-      const svgEl = canvas.querySelector('svg');
-      if (!svgEl) return;
-      
-      loader.classList.add('visible');
-      deselectPoly(); // Hide handles before saving
-      cancelDrawing();
-      
-      // Temporarily remove the outlines layer to keep file clean and small!
-      const outlines = svgEl.querySelector('#autocad-outlines');
-      if (outlines) outlines.remove();
-      
-      const svgString = svgEl.outerHTML;
-      
-      // Recreate immediately so user doesn't see a flash or lose outlines
-      setupLayers(svgEl);
-      
-      try {
-        const response = await fetch('/api/save-map', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            filename: currentFilename,
-            svg: svgString
-          })
-        });
-        
-        if (!response.ok) throw new Error('Error al guardar archivo');
-        
-        toast.textContent = '¡Guardado con éxito! 💾';
-        toast.classList.add('visible');
-        setTimeout(() => toast.classList.remove('visible'), 3000);
-      } catch (err) {
-        console.error(err);
-        alert('Error al guardar: ' + err.message);
-      } finally {
-        loader.classList.remove('visible');
+    viewer.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const poly = e.target.closest('.custom-poly');
+      if (poly) {
+        selectPoly(poly);
+        ctxMenu.style.left = `${e.clientX}px`; ctxMenu.style.top = `${e.clientY}px`; ctxMenu.style.display = 'flex';
+        let rgb = window.getComputedStyle(poly).fill;
+        if (rgb.startsWith('rgb')) {
+          const vals = rgb.match(/\d+/g).map(Number);
+          rgb = '#' + vals.map(v => v.toString(16).padStart(2, '0')).join('');
+        }
+        document.getElementById('ctx-color-input').value = rgb;
+      } else {
+        ctxMenu.style.display = 'none';
       }
     });
 
-    // Download SVG plan locally
+    document.getElementById('ctx-delete').addEventListener('click', () => { if (selectedPoly) { selectedPoly.remove(); deselectPoly(); saveState(); }});
+    document.getElementById('ctx-copy').addEventListener('click', () => { if (selectedPoly) { clipboardPoly = selectedPoly.cloneNode(true); showToast('Copiado'); ctxMenu.style.display='none'; }});
+    document.getElementById('ctx-color-input').addEventListener('input', (e) => { if (selectedPoly) { selectedPoly.setAttribute('fill', e.target.value); saveState(); }});
+
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey) {
+        if (e.key === 'c' || e.key === 'C') {
+          if (selectedPoly) { clipboardPoly = selectedPoly.cloneNode(true); showToast('Copiado'); }
+        } else if (e.key === 'v' || e.key === 'V') {
+          if (clipboardPoly && canvas.querySelector('#custom-color-blocks')) {
+            const newPoly = clipboardPoly.cloneNode(true);
+            const pts = getPathPoints(newPoly);
+            setPathPoints(newPoly, pts.map(p => ({ x: p.x + 20/currentScale, y: p.y + 20/currentScale })));
+            newPoly.classList.remove('selected');
+            
+            // Arreglado en la función de pegar
+            canvas.querySelector('#custom-color-blocks').appendChild(newPoly);
+            
+            selectPoly(newPoly); saveState(); showToast('Pegado');
+          }
+        } else if (e.key === 'z' || e.key === 'Z') { e.preventDefault(); undo(); }
+        else if (e.key === 'y' || e.key === 'Y') { e.preventDefault(); redo(); }
+      } else if (e.key === 'Delete') {
+        if (selectedPoly && !isPlacingVertex) { selectedPoly.remove(); deselectPoly(); saveState(); }
+      }
+    });
+
+    viewer.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      if (e.ctrlKey) {
+        const zoomFactor = e.deltaY < 0 ? 1.1 : 1/1.1;
+        const cx = (e.clientX - viewer.getBoundingClientRect().left - currentX) / currentScale;
+        const cy = (e.clientY - viewer.getBoundingClientRect().top - currentY) / currentScale;
+        currentScale = Math.max(0.05, Math.min(currentScale * zoomFactor, 25));
+        currentX = e.clientX - viewer.getBoundingClientRect().left - cx * currentScale;
+        currentY = e.clientY - viewer.getBoundingClientRect().top - cy * currentScale;
+      } else {
+        currentX -= e.deltaX; currentY -= e.deltaY;
+      }
+      updateTransform();
+    }, { passive: false });
+
+    // Corrección para la descarga (mantener capas correctamente)
     downloadBtn.addEventListener('click', () => {
       const svgEl = canvas.querySelector('svg');
       if (!svgEl) return;
-      
-      deselectPoly(); // Hide selection outline/handles before exporting
-      
-      // Temporarily remove the outlines layer to keep file clean and small!
-      const outlines = svgEl.querySelector('#autocad-outlines');
-      if (outlines) outlines.remove();
-      
+      deselectPoly(); 
       const svgString = svgEl.outerHTML;
-      
       setupLayers(svgEl);
       
       const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
-      
       const a = document.createElement('a');
-      a.href = url;
-      a.download = currentFilename || 'plano.svg';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const downloadName = currentFilename.toLowerCase().endsWith('.svg')
+        ? `${currentFilename.slice(0, -4)} coloreado.svg`
+        : `${currentFilename} coloreado.svg`;
+      a.href = url; a.download = downloadName || 'plano coloreado.svg';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
-      toast.textContent = '¡Plano descargado con éxito! 📥';
-      toast.classList.add('visible');
-      setTimeout(() => toast.classList.remove('visible'), 2500);
+      showToast('¡Plano descargado con éxito! 📥');
     });
 
-    // Upload local SVG plan
-    uploadBtn.addEventListener('click', () => {
-      fileUploader.click();
-    });
-
+    uploadBtn.addEventListener('click', () => fileUploader.click());
     fileUploader.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      
-      currentFilename = file.name;
-      isPolyLocked = false;
-      if (lockPolyBtn) {
-        lockPolyBtn.innerHTML = '<span>🔒 Bloquear Figuras</span>';
-        lockPolyBtn.style.backgroundColor = '#e11d48';
-      }
-      
+      currentFilename = file.name; isPolyLocked = false;
       const reader = new FileReader();
       reader.onload = (evt) => {
-        const svgText = evt.target.result;
-        
-        // Inject SVG text directly
-        canvas.innerHTML = svgText;
-        
+        canvas.innerHTML = evt.target.result;
         const svgEl = canvas.querySelector('svg');
         if (svgEl) {
-          svgEl.style.width = '100%';
-          svgEl.style.height = '100%';
-          
-          // Make all white filled shapes in the AutoCAD drawing transparent
-          // (using fill-opacity="0" so they remain clickable inside, but let background blocks show through!)
-          // We use window.getComputedStyle to detect white fills regardless of whether they are set via attributes or CSS classes!
-          const shapes = svgEl.querySelectorAll('path, rect, polygon, circle, ellipse, polyline');
-          shapes.forEach(shape => {
+          svgEl.style.width = '100%'; svgEl.style.height = '100%';
+          svgEl.querySelectorAll('path, rect, polygon, circle, ellipse, polyline').forEach(shape => {
             if (shape.classList.contains('custom-poly')) return;
             const fillVal = window.getComputedStyle(shape).fill;
-            const isWhite = fillVal === 'rgb(255, 255, 255)' || 
-                            fillVal === '#ffffff' || 
-                            fillVal === 'white';
-            if (isWhite) {
-              shape.style.setProperty('fill-opacity', '0', 'important');
-            }
+            if (['rgb(255, 255, 255)', '#ffffff', 'white'].includes(fillVal)) shape.style.setProperty('fill-opacity', '0', 'important');
           });
-          
-          setupLayers(svgEl);
+          setupLayers(svgEl); saveState();
         }
-        resetView();
-        
-        toast.textContent = '¡Plano cargado con éxito! 📤';
-        toast.classList.add('visible');
-        setTimeout(() => toast.classList.remove('visible'), 2500);
+        resetView(); showToast('¡Plano cargado con éxito! 📤');
       };
       reader.readAsText(file);
     });
 
-    // PRE-DEFINED TEXT TO COLOR PALETTE MAPPING
-    function getColorForText(text) {
-      const t = text.toLowerCase().trim();
-      if (t.match(/^b\s*\d+$/) || t === 's.s.' || t === 'ss' || t === 's.s' || t.includes('baño') || t.includes('sanitario')) {
-        return '#1E90FF'; // Azul
-      }
-      if (t === 's' || t === 'b' || t.includes('rampa') || t.includes('gradas') || t.includes('escalera') || t.includes('elevador') || t.includes('ascensor') || t.includes('conexion') || t.includes('conexión')) {
-        return '#FF4500'; // Rojo
-      }
-      if (t.includes('césped') || t.includes('cesped') || t.includes('jardín') || t.includes('jardin') || t.includes('verde') || t.includes('grama') || t.includes('jardines') || t.includes('cancha')) {
-        return '#90EE90'; // Verde claro
-      }
-      if (t.includes('planta') || t.includes('macetero') || t.includes('macetera') || t.includes('plantas')) {
-        return '#228B22'; // Verde oscuro
-      }
-      if (t.includes('concreto') || t.includes('pasillo') || t.includes('corredor') || t.includes('vestibulo') || t.includes('lobby') || t.includes('ingreso') || t.includes('parqueo') || t.includes('plaza') || t.includes('patio')) {
-        return '#D3D3D3'; // Gris
-      }
-      if (t.includes('suelo') || t.includes('colegio') || t.includes('cancha') || t.includes('patio principal')) {
-        return '#FFDAB9'; // Piel
-      }
-      const classroomKeywords = ['aula', 'sala', 'tics', 'reuniones', 'preceptoria', 'oficina', 'secretaria', 'direccion', 'coordinacion', 'orientacion', 'profesores', 'contabilidad', 'auditorio', 'fablab', 'taller', 'enfermeria', 'básicos', 'diversificado'];
-      const isCode = /^[a-z](-\d+|\d+)$/i.test(t);
-      if (isCode || classroomKeywords.some(kw => t.includes(kw))) {
-        return '#FFA500'; // Naranja
-      }
-      return '#FFE4C4'; // Bisque fallback
-    }
+    document.getElementById('zoom-in').addEventListener('click', () => { currentScale = Math.min(currentScale * 1.2, 25); updateTransform(); });
+    document.getElementById('zoom-out').addEventListener('click', () => { currentScale = Math.max(currentScale / 1.2, 0.05); updateTransform(); });
+    document.getElementById('zoom-reset').addEventListener('click', resetView);
 
-    function isLayoutText(text) {
-      const layoutKeywords = [
-        'PLANTA', 'ESCALA', 'CONSTRUYE', 'PROPIETARIO', 'EJECUTOR', 'CONTENIDO', 
-        'PROYECTO', 'DISEÑO', 'DIBUJO', 'FECHA', 'MAYO', 'TIMBRE', 'HOJA', 
-        'FIRMA', 'OBSERVACIONES', 'MARGEN', 'CAJETIN', 'KINAL', 'FIRMA Y SELLO', 
-        'ESCALA INDICADA', 'AREA DE AMBIENTES', 'Y CIRCULACION', 'C.S.C.M', 'RUTAS DE EVACUACIÓN',
-        'NIVEL', 'PRIMER', 'SEGUNDO', 'TERCER', 'CUARTO'
-      ];
-      return layoutKeywords.some(kw => text.toUpperCase().includes(kw));
-    }
-
-    // CLIENT-SIDE AUTO-COLORIZER
-    autocolorBtn.addEventListener('click', () => {
-      const svgEl = canvas.querySelector('svg');
-      if (!svgEl) return;
-      
-      loader.classList.add('visible');
-      deselectPoly();
-      setTimeout(() => {
-        try {
-          const textElements = svgEl.querySelectorAll('text');
-          const texts = Array.from(textElements).map(t => {
-            const bbox = t.getBBox();
-            return {
-              text: t.textContent.replace(/<[^>]*>/g, '').trim(),
-              x: bbox.x + bbox.width / 2,
-              y: bbox.y + bbox.height / 2
-            };
-          }).filter(t => t.text && !isLayoutText(t.text));
-
-          const paths = svgEl.querySelectorAll('path');
-          
-          paths.forEach(path => {
-            const id = path.getAttribute('id') || '';
-            const bbox = path.getBBox();
-            const area = bbox.width * bbox.height;
-            if (area >= 5000000 || bbox.width < 2 || bbox.height < 2) return;
-            
-            const style = path.getAttribute('style') || '';
-            const fill = path.getAttribute('fill') || '';
-            
-            const isWhiteFill = fill.toLowerCase() === '#ffffff' || 
-                                fill.toLowerCase() === 'white' || 
-                                fill.toLowerCase() === '#fff' ||
-                                style.toLowerCase().includes('fill:#ffffff') ||
-                                style.toLowerCase().includes('fill:white') ||
-                                style.toLowerCase().includes('fill:#fff') ||
-                                (!style.includes('fill:') && !fill);
-                                
-            const isNoFillOutline = style.toLowerCase().includes('fill:none') && 
-                                    style.toLowerCase().includes('stroke:#000000') &&
-                                    area > 200 && bbox.width > 5 && bbox.height > 5;
-                                    
-            if (isWhiteFill || isNoFillOutline) {
-              const cx = bbox.x + bbox.width / 2;
-              const cy = bbox.y + bbox.height / 2;
-              
-              let closestText = null;
-              let minDist = Infinity;
-              
-              texts.forEach(t => {
-                const dist = Math.hypot(cx - t.x, cy - t.y);
-                if (dist < minDist) {
-                  minDist = dist;
-                  closestText = t;
-                }
-              });
-              
-              if (closestText && minDist < 200) {
-                const color = getColorForText(closestText.text);
-                let newStyle = style;
-                if (style.includes('fill:')) {
-                  newStyle = style.replace(/fill:\s*[^;]+/, `fill:${color}`);
-                } else {
-                  newStyle = style + `;fill:${color}`;
-                }
-                path.setAttribute('style', newStyle);
-              }
-            }
-          });
-          
-          toast.textContent = '¡Coloreado con éxito! ⚡';
-          toast.classList.add('visible');
-          setTimeout(() => toast.classList.remove('visible'), 3000);
-        } catch (err) {
-          console.error(err);
-          alert('Error en autocoloreado: ' + err.message);
-        } finally {
-          loader.classList.remove('visible');
-        }
-      }, 50);
-    });
-
-    // CLIENT-SIDE CLEAR ALL COLORS
-    clearBtn.addEventListener('click', () => {
-      const svgEl = canvas.querySelector('svg');
-      if (!svgEl) return;
-      
-      loader.classList.add('visible');
-      deselectPoly();
-      setTimeout(() => {
-        try {
-          const paths = svgEl.querySelectorAll('path');
-          paths.forEach(path => {
-            const bbox = path.getBBox();
-            const area = bbox.width * bbox.height;
-            if (area >= 5000000) return;
-            
-            let style = path.getAttribute('style') || '';
-            if (style.includes('fill:')) {
-              style = style.replace(/fill:\s*[^;]+/, 'fill:#ffffff');
-              path.setAttribute('style', style);
-            }
-          });
-          
-          toast.textContent = '¡Colores borrados! 🧹';
-          toast.classList.add('visible');
-          setTimeout(() => toast.classList.remove('visible'), 3000);
-        } catch (err) {
-          console.error(err);
-          alert('Error al limpiar: ' + err.message);
-        } finally {
-          loader.classList.remove('visible');
-        }
-      }, 50);
-    });
-
-    // Pan & Drag viewer movement
-    viewer.addEventListener('mousedown', (e) => {
-      if (activeTool === 'paint' && e.target.closest('path')) return;
-      if (activeTool === 'draw' && e.target.closest('.custom-poly') && !isPolyLocked) return;
-      if (activeTool === 'draw' && e.target.closest('#poly-handles-group')) return;
-      if (e.target.closest('.controls') || e.target.closest('.legend-panel') || e.target.closest('.sidebar')) return;
-      
-      isDragging = true;
-      startX = e.clientX - currentX;
-      startY = e.clientY - currentY;
-    });
-
-    window.addEventListener('mouseup', () => {
-      isDragging = false;
-    });
-
-    viewer.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      currentX = e.clientX - startX;
-      currentY = e.clientY - startY;
-      updateTransform();
-    });
-
-    // Wheel Zoom
-    viewer.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      const zoomFactor = 1.1;
-      const mouseX = e.clientX - viewer.getBoundingClientRect().left;
-      const mouseY = e.clientY - viewer.getBoundingClientRect().top;
-
-      const cx = (mouseX - currentX) / currentScale;
-      const cy = (mouseY - currentY) / currentScale;
-
-      if (e.deltaY < 0) {
-        currentScale = Math.min(currentScale * zoomFactor, 25);
-      } else {
-        currentScale = Math.max(currentScale / zoomFactor, 0.05);
-      }
-
-      currentX = mouseX - cx * currentScale;
-      currentY = mouseY - cy * currentScale;
-      
-      updateTransform();
-    }, { passive: false });
-
-    // Zoom Buttons
-    document.getElementById('zoom-in').addEventListener('click', () => {
-      currentScale = Math.min(currentScale * 1.2, 25);
-      updateTransform();
-    });
-
-    document.getElementById('zoom-out').addEventListener('click', () => {
-      currentScale = Math.max(currentScale / 1.2, 0.05);
-      updateTransform();
-    });
-
-    document.getElementById('zoom-reset').addEventListener('click', () => {
-      resetView();
-    });
-
-    // Initial Load
-    window.addEventListener('DOMContentLoaded', () => {
-      document.documentElement.style.setProperty('--canvas-bg', '#ffffff');
-      loadSVG('NIVEL-1-KINAL.svg');
-    });
+    window.addEventListener('DOMContentLoaded', () => loadSVG('NIVEL-1-KINAL.svg'));
   </script>
 </body>
 </html>
